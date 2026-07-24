@@ -43,7 +43,12 @@
     "repositories": [
         {
             "type": "composer",
-            "url": "https://git.ole-hartwig.eu/api/v4/group/175/-/packages/composer/packages.json"
+            "url": "https://git.ole-hartwig.eu/api/v4/group/175/-/packages/composer/packages.json",
+            "only": [
+                "moselwal/*",
+                "hn/typo3-mcp-server",
+                "netresearch/nr-passkeys-be"
+            ]
         }
     ],
     "autoload": {
