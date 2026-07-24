@@ -1,3 +1,10 @@
+## [4.5.3](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.2...v4.5.3) (2026-07-24)
+
+
+### Bug Fixes
+
+* **ci:** drop github-mirror (no public mirroring for now) ([9c6d0bc](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/9c6d0bc0cfb282f01aa57190e102424872f69cb9))
+
 ## [4.5.2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.1...v4.5.2) (2026-07-24)
 
 
