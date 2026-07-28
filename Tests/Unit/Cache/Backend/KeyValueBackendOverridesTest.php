@@ -58,13 +58,23 @@ final class KeyValueBackendOverridesTest extends TestCase
         $redis = $this->createMock(\Redis::class);
         $backend = $this->buildBackendWithMockRedis($redis, keyPrefix: 'typo3:c:');
 
-        // The override resolves all identifiers in ONE sUnion call
-        // across all tag-set keys. Before v4.2.0 this was N separate
-        // flushByTag() invocations, each doing its own sUnion.
-        $redis->expects(self::once())
+        // What this guards is that N tags cost one round of work, not N
+        // flushByTag() invocations each doing their own union — the shape
+        // before v4.2.0.
+        //
+        // That is two sUnion calls, not one, and both are needed: the first
+        // asks which identifiers carry these tags, the second asks which tags
+        // those identifiers carry, so the reverse index can be cleaned up
+        // without leaving orphans behind. Pinning it at one call described a
+        // version of flushByTags that would not work.
+        $unions = [];
+        $redis->expects(self::exactly(2))
             ->method('sUnion')
-            ->with('typo3:c:identTags:foo', 'typo3:c:identTags:bar', 'typo3:c:identTags:baz')
-            ->willReturn(['typo3:c:identTags:e1', 'typo3:c:identTags:e2']);
+            ->willReturnCallback(static function (string ...$keys) use (&$unions): array {
+                $unions[] = $keys;
+
+                return 1 === count($unions) ? ['e1', 'e2'] : ['foo', 'bar', 'baz'];
+            });
 
         $pipeline = $this->createMock(\Redis::class);
         $pipeline->method('sAdd')->willReturnSelf();
@@ -81,6 +91,17 @@ final class KeyValueBackendOverridesTest extends TestCase
             ->willReturn($pipeline);
 
         $backend->flushByTags(['foo', 'bar', 'baz']);
+
+        self::assertSame(
+            ['typo3:c:tagIdents:foo', 'typo3:c:tagIdents:bar', 'typo3:c:tagIdents:baz'],
+            $unions[0],
+            'all three tags must be resolved together, not one union per tag',
+        );
+        self::assertSame(
+            ['typo3:c:identTags:e1', 'typo3:c:identTags:e2'],
+            $unions[1],
+            'the reverse index is collected for every identifier found, in one go',
+        );
     }
 
     #[Test]
@@ -94,7 +115,7 @@ final class KeyValueBackendOverridesTest extends TestCase
         $redis->method('sUnion')->willReturn([]);
         $redis->expects(self::once())
             ->method('unlink')
-            ->with('typo3:c:identTags:foo', 'typo3:c:identTags:bar');
+            ->with('typo3:c:tagIdents:foo', 'typo3:c:tagIdents:bar');
         $redis->expects(self::never())->method('multi');
 
         $backend->flushByTags(['foo', 'bar']);
@@ -111,11 +132,11 @@ final class KeyValueBackendOverridesTest extends TestCase
 
         $redis->expects(self::once())
             ->method('sUnion')
-            ->with('typo3:c:identTags:singleTag')
+            ->with('typo3:c:tagIdents:singleTag')
             ->willReturn([]);
         $redis->expects(self::once())
             ->method('unlink')
-            ->with('typo3:c:identTags:singleTag');
+            ->with('typo3:c:tagIdents:singleTag');
 
         $backend->flushByTag('singleTag');
     }

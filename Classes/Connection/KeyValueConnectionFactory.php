@@ -7,7 +7,7 @@ namespace Moselwal\KeyValueStore\Connection;
 use Moselwal\KeyValueStore\Connection\ValueObject\ConnectionParams;
 use Moselwal\KeyValueStore\Connection\ValueObject\Endpoint;
 
-final class KeyValueConnectionFactory
+final class KeyValueConnectionFactory implements ConnectionFactoryInterface
 {
     public function __construct(
         private readonly TlsContextBuilder $tlsContextBuilder = new TlsContextBuilder(),
@@ -140,6 +140,24 @@ final class KeyValueConnectionFactory
      */
     private function buildRedis(Endpoint $endpoint, ?array $tlsContext, ConnectionParams $params): \Redis
     {
+        return new \Redis($this->buildRedisConfig($endpoint, $tlsContext, $params));
+    }
+
+    /**
+     * Assembles the phpredis constructor config.
+     *
+     * Separate from buildRedis() because \Redis connects inside its own
+     * constructor: anything that wants to check what we are about to ask for —
+     * the tls:// prefix, the auth entry, the backoff block — otherwise has to
+     * open a socket to find out. The two tests covering this were doing exactly
+     * that and depended on a host named redis.local resolving.
+     *
+     * @param array{ssl: array<string, mixed>}|null $tlsContext
+     *
+     * @return array<string, mixed>
+     */
+    private function buildRedisConfig(Endpoint $endpoint, ?array $tlsContext, ConnectionParams $params): array
+    {
         $cfg = [
             'host' => null !== $tlsContext ? ('tls://' . $endpoint->host) : $endpoint->host,
             'port' => $endpoint->port,
@@ -166,6 +184,6 @@ final class KeyValueConnectionFactory
             $cfg['backoff'] = $params->backoff;
         }
 
-        return new \Redis($cfg);
+        return $cfg;
     }
 }

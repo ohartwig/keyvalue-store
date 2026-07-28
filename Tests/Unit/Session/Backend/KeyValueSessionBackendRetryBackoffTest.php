@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Moselwal\KeyValueStore\Tests\Unit\Session\Backend;
 
+use Moselwal\KeyValueStore\Connection\ConnectionFactoryInterface;
 use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use Moselwal\KeyValueStore\Session\Backend\KeyValueSessionBackend;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
@@ -24,7 +25,7 @@ final class KeyValueSessionBackendRetryBackoffTest extends TestCase
         $redis = $this->createMock(\Redis::class);
         $redis->method('ping')->willReturn(true);
 
-        $factory = $this->createMock(KeyValueConnectionFactory::class);
+        $factory = $this->createMock(ConnectionFactoryInterface::class);
         $factory->expects(self::exactly(3))
             ->method('create')
             ->willReturnOnConsecutiveCalls(
@@ -50,7 +51,7 @@ final class KeyValueSessionBackendRetryBackoffTest extends TestCase
     #[Test]
     public function threeFailuresRethrowOriginalRedisException(): void
     {
-        $factory = $this->createMock(KeyValueConnectionFactory::class);
+        $factory = $this->createMock(ConnectionFactoryInterface::class);
         $factory->expects(self::exactly(3))
             ->method('create')
             ->willThrowException(new \RedisException('persistent failure'));
@@ -62,7 +63,7 @@ final class KeyValueSessionBackendRetryBackoffTest extends TestCase
         $this->invokeGetRedis($backend);
     }
 
-    private function buildBackendWithFactory(KeyValueConnectionFactory $factory): KeyValueSessionBackend
+    private function buildBackendWithFactory(ConnectionFactoryInterface $factory): KeyValueSessionBackend
     {
         $backend = new KeyValueSessionBackend();
         $backend->initialize('FE', [
