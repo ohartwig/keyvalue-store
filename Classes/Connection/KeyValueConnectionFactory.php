@@ -82,6 +82,7 @@ final class KeyValueConnectionFactory implements ConnectionFactoryInterface
     // Private: endpoint resolution
     // -------------------------------------------------------------------------
 
+    /** @param array<string, mixed> $options */
     private function resolveEndpoint(array $options, float $connectTimeout): Endpoint
     {
         if (isset($options['sentinel']) && true === (bool) $options['sentinel']) {
@@ -138,6 +139,7 @@ final class KeyValueConnectionFactory implements ConnectionFactoryInterface
      *   ssl            array   PHP stream SSL context options (without the outer 'ssl' wrapper)
      *   backoff        array   ['algorithm' => ..., 'base' => ..., 'cap' => ...]
      */
+    /** @param array{ssl: array<string, mixed>}|null $tlsContext */
     private function buildRedis(Endpoint $endpoint, ?array $tlsContext, ConnectionParams $params): \Redis
     {
         return new \Redis($this->buildRedisConfig($endpoint, $tlsContext, $params));
