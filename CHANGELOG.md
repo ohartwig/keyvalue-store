@@ -1,3 +1,10 @@
+## [4.5.4](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.3...v4.5.4) (2026-07-28)
+
+
+### Bug Fixes
+
+* repair the unit suite and the option typing it was hiding ([cb1e7e4](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/cb1e7e4ee4d895e4d13252c1451a2ab60b7b729a))
+
 ## [4.5.3](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.2...v4.5.3) (2026-07-24)
 
 
