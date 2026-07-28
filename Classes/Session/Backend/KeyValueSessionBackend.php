@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Moselwal\KeyValueStore\Session\Backend;
 
+use Moselwal\KeyValueStore\Connection\ConnectionFactoryInterface;
 use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use Redis;
 // TYPO3 11-13 has this exception; TYPO3 14 removed it.
@@ -121,7 +122,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      */
     private bool $hashSessionIds = true;
 
-    private KeyValueConnectionFactory $factory;
+    private ConnectionFactoryInterface $factory;
 
     public function __construct()
     {

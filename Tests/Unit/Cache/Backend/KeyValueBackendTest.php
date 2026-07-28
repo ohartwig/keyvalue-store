@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Moselwal\KeyValueStore\Tests\Unit\Cache\Backend;
 
 use Moselwal\KeyValueStore\Cache\Backend\KeyValueBackend;
+use Moselwal\KeyValueStore\Connection\ConnectionFactoryInterface;
 use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,7 +30,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsMapsHostnameToHost(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => 'redis.example.com',
             'port' => 6380,
             'database' => 3,
@@ -46,12 +47,12 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsUsesDefaultValues(): void
     {
-        $backend = new KeyValueBackend('production', []);
+        $backend = new KeyValueBackend([]);
 
         $opts = $this->invokeBuildFactoryOptions($backend);
 
         // RedisBackend defaults
-        self::assertSame('localhost', $opts['host']);
+        self::assertSame('127.0.0.1', $opts['host']);
         self::assertSame(6379, $opts['port']);
         self::assertSame(0, $opts['database']);
         self::assertSame(0.0, $opts['connectTimeout']);
@@ -64,7 +65,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsCastsTypesCorrectly(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'port' => '6380',
             'database' => '5',
             'connectionTimeout' => '2.5',
@@ -88,7 +89,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsIncludesAuthWhenPasswordSet(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'password' => 'secret123',
         ]);
@@ -103,7 +104,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsOmitsAuthWhenPasswordEmpty(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'password' => '',
         ]);
@@ -117,7 +118,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsOmitsAuthWhenNoPasswordProvided(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
         ]);
 
@@ -150,7 +151,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsSetsPersistentIdWithDatabaseSuffix(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'database' => 7,
             'persistentConnection' => true,
@@ -165,7 +166,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsPersistentIdUsesDefaultDatabase(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'persistentConnection' => true,
         ]);
@@ -179,7 +180,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsPersistentIsFalseWhenDisabled(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'persistentConnection' => false,
         ]);
@@ -197,7 +198,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsMergesTlsOptions(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'tls' => true,
             'ca_file' => '/run/tls/ca.crt',
@@ -225,7 +226,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsMergesSentinelOptions(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'sentinel' => true,
             'sentinel_host' => 'sentinel.local',
@@ -253,7 +254,7 @@ final class KeyValueBackendTest extends TestCase
             'cap' => 750,
         ];
 
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'backoff' => $backoff,
         ]);
@@ -267,7 +268,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsReadTimeoutFromCamelCase(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'readTimeout' => 3.5,
         ]);
@@ -282,7 +283,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsReadTimeoutFromSnakeCase(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'read_timeout' => 2.0,
         ]);
@@ -297,7 +298,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsRetryIntervalFromCamelCase(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'retryInterval' => 150,
         ]);
@@ -311,7 +312,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function buildFactoryOptionsRetryIntervalFromSnakeCase(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'retry_interval' => 200,
         ]);
@@ -328,7 +329,7 @@ final class KeyValueBackendTest extends TestCase
     {
         // rawOptions include 'hostname' which is a parent key but also ends up
         // in rawOptions — array_replace should let it through harmlessly.
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => 'redis.example.com',
             'port' => 6380,
             'database' => 2,
@@ -377,7 +378,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function initializeObjectCallsFactoryCreateAndSetsConnected(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
             'port' => 6379,
             'database' => 0,
@@ -385,7 +386,7 @@ final class KeyValueBackendTest extends TestCase
 
         $redisMock = $this->createMock(\Redis::class);
 
-        $factoryMock = $this->createMock(KeyValueConnectionFactory::class);
+        $factoryMock = $this->createMock(ConnectionFactoryInterface::class);
         $factoryMock->expects(self::once())
             ->method('create')
             ->willReturn($redisMock);
@@ -409,7 +410,7 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function initializeObjectPassesCorrectOptionsToFactory(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => 'redis.local',
             'port' => 6380,
             'database' => 5,
@@ -422,7 +423,7 @@ final class KeyValueBackendTest extends TestCase
         $capturedOptions = null;
         $redisMock = $this->createMock(\Redis::class);
 
-        $factoryMock = $this->createMock(KeyValueConnectionFactory::class);
+        $factoryMock = $this->createMock(ConnectionFactoryInterface::class);
         $factoryMock->expects(self::once())
             ->method('create')
             ->with(self::callback(static function (array $opts) use (&$capturedOptions): bool {
@@ -451,11 +452,11 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function initializeObjectThrowsCacheExceptionOnRedisException(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
         ]);
 
-        $factoryMock = $this->createMock(KeyValueConnectionFactory::class);
+        $factoryMock = $this->createMock(ConnectionFactoryInterface::class);
         $factoryMock->expects(self::once())
             ->method('create')
             ->willThrowException(new \RedisException('Connection refused'));
@@ -474,11 +475,11 @@ final class KeyValueBackendTest extends TestCase
     #[RequiresPhpExtension('redis')]
     public function initializeObjectSetsConnectedFalseOnFailure(): void
     {
-        $backend = new KeyValueBackend('production', [
+        $backend = new KeyValueBackend([
             'hostname' => '127.0.0.1',
         ]);
 
-        $factoryMock = $this->createMock(KeyValueConnectionFactory::class);
+        $factoryMock = $this->createMock(ConnectionFactoryInterface::class);
         $factoryMock->expects(self::once())
             ->method('create')
             ->willThrowException(new \InvalidArgumentException('Bad config'));

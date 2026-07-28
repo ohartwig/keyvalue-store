@@ -48,7 +48,7 @@ final class KeyValueBackendSetTagDiffTest extends TestCase
         $redis->expects(self::once())
             ->method('eval')
             ->with(
-                self::isType('string'),
+                self::isString(),
                 self::callback(function (array $args): bool {
                     // KEYS[1], KEYS[2], ARGV[1] = ttl
                     // Args layout: [dataKey, tagsKey, ttl, payload, identifier, tagPrefix, ...tags]
@@ -70,7 +70,7 @@ final class KeyValueBackendSetTagDiffTest extends TestCase
         $redis->expects(self::once())
             ->method('eval')
             ->with(
-                self::isType('string'),
+                self::isString(),
                 self::callback(fn(array $args): bool => 3600 === (int) $args[2]),
                 2,
             )
@@ -91,7 +91,7 @@ final class KeyValueBackendSetTagDiffTest extends TestCase
         $redis->expects(self::once())
             ->method('eval')
             ->with(
-                self::isType('string'),
+                self::isString(),
                 self::callback(function (array $args): bool {
                     // KEYS (2) + ARGV1-4 (ttl, payload, identifier, tagPrefix) = 6 entries.
                     return 6 === count($args);
@@ -112,7 +112,7 @@ final class KeyValueBackendSetTagDiffTest extends TestCase
         $redis->expects(self::once())
             ->method('eval')
             ->with(
-                self::isType('string'),
+                self::isString(),
                 self::callback(function (array $args): bool {
                     // KEYS[1] = keyPrefix + 'identData:' + identifier
                     // KEYS[2] = keyPrefix + 'identTags:' + identifier

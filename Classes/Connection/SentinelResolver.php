@@ -28,6 +28,37 @@ final class SentinelResolver
      */
     public function resolveMaster(array $options): Endpoint
     {
+        $sentinelConfig = $this->buildSentinelConfig($options);
+        $service = (string) ($options['sentinel_service'] ?? '');
+        $connectTimeout = (float) ($options['connectTimeout'] ?? $options['timeout'] ?? 1.0);
+
+        /** @phpstan-ignore-next-line */
+        $sentinel = new \RedisSentinel($sentinelConfig);
+
+        $addr = $sentinel->getMasterAddrByName($service);
+        if (!is_array($addr) || count($addr) < 2) {
+            throw new \RuntimeException(sprintf('Could not resolve master "%s" via sentinel getMasterAddrByName().', $service));
+        }
+
+        return new Endpoint((string) $addr[0], (int) $addr[1], $connectTimeout);
+    }
+
+    /**
+     * Assembles the \RedisSentinel constructor config and validates the options.
+     *
+     * Split out from resolveMaster() because the rest of that method talks to a
+     * live Sentinel: the default port, the tls:// prefix and the conditional
+     * auth/persistent entries cannot otherwise be checked without one running.
+     * The test that covered this used to subclass SentinelResolver and restate
+     * the logic in the subclass — so it verified its own copy, and once the
+     * class became final it stopped running at all.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @return array<string, mixed>
+     */
+    private function buildSentinelConfig(array $options): array
+    {
         if (!isset($options['sentinel']) || true !== (bool) $options['sentinel']) {
             throw new \InvalidArgumentException('Sentinel is not enabled in options.');
         }
@@ -69,14 +100,6 @@ final class SentinelResolver
             }
         }
 
-        /** @phpstan-ignore-next-line */
-        $sentinel = new \RedisSentinel($sentinelConfig);
-
-        $addr = $sentinel->getMasterAddrByName($service);
-        if (!is_array($addr) || count($addr) < 2) {
-            throw new \RuntimeException(sprintf('Could not resolve master "%s" via sentinel getMasterAddrByName().', $service));
-        }
-
-        return new Endpoint((string) $addr[0], (int) $addr[1], $connectTimeout);
+        return $sentinelConfig;
     }
 }

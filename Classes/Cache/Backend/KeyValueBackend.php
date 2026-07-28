@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Moselwal\KeyValueStore\Cache\Backend;
 
+use Moselwal\KeyValueStore\Connection\ConnectionFactoryInterface;
 use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use TYPO3\CMS\Core\Cache\Backend\RedisBackend;
 use TYPO3\CMS\Core\Cache\Exception;
@@ -46,7 +47,7 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  */
 final class KeyValueBackend extends RedisBackend
 {
-    private KeyValueConnectionFactory $factory;
+    private ConnectionFactoryInterface $factory;
 
     /**
      * All raw options passed by CacheManager, stored for use in buildFactoryOptions().
@@ -108,8 +109,54 @@ final class KeyValueBackend extends RedisBackend
     {
         $this->rawOptions = $options;
         $filteredOptions = array_intersect_key($options, array_flip(self::PARENT_OPTION_KEYS));
-        parent::__construct($filteredOptions);
+        parent::__construct(self::coerceScalarOptions($filteredOptions));
         $this->factory = new KeyValueConnectionFactory();
+    }
+
+    /**
+     * Brings numeric options to the type core's setters demand.
+     *
+     * These options arrive from site configuration, environment variables and
+     * secret placeholders, where every value is a string — `port: '6380'` is
+     * ordinary YAML, not a mistake. Core's setters are typed (`setPort(int)`),
+     * so an unconverted string reaches them as a TypeError and the cache cannot
+     * be constructed at all. Converting here, before handing the options up, is
+     * the only place that can still do it.
+     *
+     * Only well-formed numerics are converted. Anything else is passed through
+     * untouched so core still rejects it — silently turning "six thousand" into
+     * 0 would be worse than the error.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @return array<string, mixed>
+     */
+    private static function coerceScalarOptions(array $options): array
+    {
+        foreach (['port', 'database', 'compressionLevel', 'defaultLifetime'] as $key) {
+            if (isset($options[$key]) && is_string($options[$key]) && 1 === preg_match('/^-?\d+$/', $options[$key])) {
+                $options[$key] = (int) $options[$key];
+            }
+        }
+
+        // Core keeps the connection timeout as whole seconds (setConnectionTimeout(int)),
+        // so a fractional value has to be rounded before it goes up. The precise
+        // value is not lost: the factory reads connectTimeout from the unfiltered
+        // options, where 2.5 stays 2.5.
+        if (isset($options['connectionTimeout']) && is_numeric($options['connectionTimeout'])) {
+            $options['connectionTimeout'] = (int) round((float) $options['connectionTimeout']);
+        }
+
+        foreach (['compression', 'persistentConnection'] as $key) {
+            if (isset($options[$key]) && is_string($options[$key])) {
+                $bool = filter_var($options[$key], FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+                if (null !== $bool) {
+                    $options[$key] = $bool;
+                }
+            }
+        }
+
+        return $options;
     }
 
     /**
@@ -466,7 +513,12 @@ final class KeyValueBackend extends RedisBackend
         $opts = [
             'host' => $this->hostname,
             'port' => $this->port,
-            'connectTimeout' => (float) $this->connectionTimeout,
+            // Read the configured value, not core's copy of it: core stores whole
+            // seconds, so a deliberate 2.5 would arrive here as 3. The socket can
+            // honour the fraction even though core's property cannot.
+            'connectTimeout' => (float) ($this->rawOptions['connectTimeout']
+                ?? $this->rawOptions['connectionTimeout']
+                ?? $this->connectionTimeout),
             'readTimeout' => (float) ($this->rawOptions['readTimeout'] ?? $this->rawOptions['read_timeout'] ?? 0.0),
             'retryInterval' => (int) ($this->rawOptions['retryInterval'] ?? $this->rawOptions['retry_interval'] ?? 0),
             'database' => $this->database,
@@ -485,14 +537,39 @@ final class KeyValueBackend extends RedisBackend
             'lazy' => true,
         ];
 
+        // An empty password means "none configured", not "authenticate with the
+        // empty string". Core disagrees — setPassword('') stores '' rather than
+        // null, so getAuthentication() hands back '' and core would send
+        // AUTH ''. Against a server without requirepass that is refused, which
+        // turns an unset environment variable into a dead cache connection
+        // instead of a working one. The distinction matters here because the
+        // options are assembled from site configuration, where an unresolved
+        // placeholder arrives as exactly that empty string.
         $authentication = $this->getAuthentication();
-        if (null !== $authentication) {
+        if (null !== $authentication && '' !== $authentication) {
             $opts['auth'] = $authentication;
         }
 
         // Merge all raw options (TLS, sentinel, backoff, and any extra keys).
         // rawOptions may also contain standard keys like hostname/port that were
-        // already applied via parent setters — they are harmless extras for the factory.
-        return array_replace($opts, $this->rawOptions);
+        // already applied via parent setters — they are harmless extras for the
+        // factory, except that they arrive as configuration strings and would
+        // overwrite the typed values assembled above. Type the result, not the
+        // inputs, so every path into this method ends up the same shape.
+        $merged = array_replace($opts, $this->rawOptions);
+
+        foreach (['port', 'database', 'retryInterval'] as $key) {
+            if (isset($merged[$key]) && is_numeric($merged[$key])) {
+                $merged[$key] = (int) $merged[$key];
+            }
+        }
+
+        foreach (['connectTimeout', 'readTimeout'] as $key) {
+            if (isset($merged[$key]) && is_numeric($merged[$key])) {
+                $merged[$key] = (float) $merged[$key];
+            }
+        }
+
+        return $merged;
     }
 }

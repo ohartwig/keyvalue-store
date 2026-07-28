@@ -76,16 +76,16 @@ final class KeyValueConnectionFactoryTest extends TestCase
     {
         $factory = new KeyValueConnectionFactory();
 
-        $method = new \ReflectionMethod($factory, 'buildRedis');
+        $method = new \ReflectionMethod($factory, 'buildRedisConfig');
 
         $endpoint = new Endpoint('redis.local', 6379, 1.0);
         $tlsContext = ['ssl' => ['verify_peer' => true, 'verify_peer_name' => true]];
         $params = ConnectionParams::fromOptions([]);
 
-        $redis = $method->invoke($factory, $endpoint, $tlsContext, $params);
+        $cfg = $method->invoke($factory, $endpoint, $tlsContext, $params);
 
-        self::assertInstanceOf(\Redis::class, $redis);
-        self::assertSame('tls://redis.local', $redis->getHost());
+        self::assertSame('tls://redis.local', $cfg['host']);
+        self::assertSame($tlsContext['ssl'], $cfg['ssl']);
     }
 
     #[Test]
@@ -94,14 +94,14 @@ final class KeyValueConnectionFactoryTest extends TestCase
     {
         $factory = new KeyValueConnectionFactory();
 
-        $method = new \ReflectionMethod($factory, 'buildRedis');
+        $method = new \ReflectionMethod($factory, 'buildRedisConfig');
 
         $endpoint = new Endpoint('redis.local', 6379, 1.0);
         $params = ConnectionParams::fromOptions([]);
 
-        $redis = $method->invoke($factory, $endpoint, null, $params);
+        $cfg = $method->invoke($factory, $endpoint, null, $params);
 
-        self::assertInstanceOf(\Redis::class, $redis);
-        self::assertSame('redis.local', $redis->getHost());
+        self::assertSame('redis.local', $cfg['host']);
+        self::assertArrayNotHasKey('ssl', $cfg);
     }
 }
