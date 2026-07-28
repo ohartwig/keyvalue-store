@@ -83,7 +83,7 @@ final class KeyValueLockingStrategy implements LockingStrategyInterface, LoggerA
         if ($this->isAcquired) {
             return true;
         }
-        if (!($mode & self::LOCK_CAPABILITY_EXCLUSIVE)) {
+        if (0 === ($mode & self::LOCK_CAPABILITY_EXCLUSIVE)) {
             throw new LockAcquireException('Insufficient capabilities.', 1700000010);
         }
 
@@ -205,6 +205,9 @@ final class KeyValueLockingStrategy implements LockingStrategyInterface, LoggerA
      * Map TYPO3_CONF_VARS locking configuration to KeyValueConnectionFactory options.
      *
      * phpredis camelCase keys are primary; legacy snake_case/TYPO3-style keys are aliased.
+     * @param array<string, mixed> $cfg
+     *
+     * @return array<string, mixed>
      */
     private function mapOptions(array $cfg): array
     {

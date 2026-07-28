@@ -119,6 +119,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      * Defaults to true. Disabling is supported for legacy migrations only —
      * raw session IDs in Redis allow any operator with read access to the
      * cache to lift active sessions.
+     * @param array<array-key, mixed> $configuration
      */
     private bool $hashSessionIds = true;
 
@@ -133,6 +134,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
     // SessionBackendInterface
     // -------------------------------------------------------------------------
 
+    /** @param array<array-key, mixed> $configuration */
     public function initialize(string $identifier, array $configuration): void
     {
         $this->options = $configuration;
@@ -184,6 +186,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      * Read session data.
      *
      * @throws SessionNotFoundException when the session does not exist
+     * @return array<array-key, mixed>
      */
     public function get(string $sessionId): array
     {
@@ -218,6 +221,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      *   - Exit the loop when the cursor becomes `0` (phpredis signals
      *     end-of-iteration that way), not when it falls below 1 —
      *     `!== 0` keeps us safe against any string-typed cursor variants.
+     * @return list<array<array-key, mixed>>
      */
     public function getAll(): array
     {
@@ -261,6 +265,9 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      * Enforces ses_id = $sessionId and updates ses_tstamp per interface contract.
      *
      * @throws SessionNotCreatedException on write failure
+     * @param array<array-key, mixed> $sessionData
+     *
+     * @return array<array-key, mixed>
      */
     public function set(string $sessionId, array $sessionData): array
     {
@@ -290,6 +297,9 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      * Preserves the existing TTL. Enforces ses_id = $sessionId and updates ses_tstamp.
      *
      * @throws SessionNotUpdatedException when the session is missing or the write fails
+     * @param array<array-key, mixed> $sessionData
+     *
+     * @return array<array-key, mixed>
      */
     public function update(string $sessionId, array $sessionData): array
     {
@@ -457,6 +467,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
         $this->redis = null;
     }
 
+    /** @return array<string, mixed> */
     private function buildFactoryOptions(): array
     {
         $opts = [
