@@ -104,4 +104,55 @@ final class KeyValueConnectionFactoryTest extends TestCase
         self::assertSame('redis.local', $cfg['host']);
         self::assertArrayNotHasKey('ssl', $cfg);
     }
+
+    /**
+     * The sentinel branch of resolveEndpoint() translates the factory's own
+     * option names into the ones SentinelResolver expects — sentinel_persistent_id
+     * becomes persistent_id, and the TLS options are forwarded so the connection
+     * to the Sentinel itself can be encrypted.
+     *
+     * That mapping had no test because SentinelResolver is final and cannot be
+     * doubled. Pointing it at a closed port exercises the whole branch anyway:
+     * every option is evaluated before the resolver ever opens a socket, and the
+     * connection then fails immediately rather than waiting for a timeout.
+     */
+    #[Test]
+    #[RequiresPhpExtension('redis')]
+    public function testCreateResolvesThroughSentinelWhenEnabled(): void
+    {
+        $factory = new KeyValueConnectionFactory();
+
+        $this->expectException(\RedisException::class);
+
+        $factory->create([
+            'sentinel' => true,
+            'sentinel_host' => '127.0.0.1',
+            'sentinel_port' => 59999,
+            'sentinel_service' => 'mymaster',
+            'sentinel_password' => 's3cret',
+            'sentinel_persistent_id' => 'sentinel-1',
+            'connectTimeout' => 0.05,
+            'tls' => true,
+            'verify_peer' => false,
+        ]);
+    }
+
+    /**
+     * Without the sentinel flag the direct endpoint is used, so an unset host
+     * has to be rejected rather than silently resolved through Sentinel.
+     */
+    #[Test]
+    public function testCreateIgnoresSentinelOptionsWhenSentinelIsDisabled(): void
+    {
+        $factory = new KeyValueConnectionFactory();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Redis host must be set.');
+
+        $factory->create([
+            'sentinel' => false,
+            'sentinel_host' => '127.0.0.1',
+            'sentinel_service' => 'mymaster',
+        ]);
+    }
 }
