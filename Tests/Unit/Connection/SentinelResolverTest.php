@@ -170,4 +170,27 @@ final class SentinelResolverTest extends TestCase
         self::assertArrayNotHasKey('persistent', $config);
         self::assertArrayNotHasKey('ssl', $config);
     }
+
+    /**
+     * The counterpart to the test above: it only proved that empty values are
+     * dropped, so the two assignments that actually pass a password and a
+     * persistent ID to \RedisSentinel were never executed. A wrong key name
+     * there would have gone unnoticed until a Sentinel setup failed to
+     * authenticate in production.
+     */
+    #[Test]
+    #[RequiresPhpExtension('redis')]
+    public function passwordAndPersistentIdAreForwardedWhenSet(): void
+    {
+        $config = $this->buildConfig(new SentinelResolver(), [
+            'sentinel' => true,
+            'sentinel_host' => '10.0.0.1',
+            'sentinel_service' => 'mymaster',
+            'sentinel_password' => 's3cret',
+            'persistent_id' => 'sentinel-1',
+        ]);
+
+        self::assertSame('s3cret', $config['auth']);
+        self::assertSame('sentinel-1', $config['persistent']);
+    }
 }
