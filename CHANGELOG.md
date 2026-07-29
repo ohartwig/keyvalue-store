@@ -1,3 +1,10 @@
+## [4.5.5](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.4...v4.5.5) (2026-07-29)
+
+
+### Bug Fixes
+
+* **docs:** point at the handbook repository, not an unreachable domain ([c656c3d](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/c656c3d45460a151a78ea206c850606739b75a4b))
+
 ## [4.5.4](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.3...v4.5.4) (2026-07-28)
 
 
