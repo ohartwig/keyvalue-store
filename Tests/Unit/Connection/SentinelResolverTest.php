@@ -115,7 +115,7 @@ final class SentinelResolverTest extends TestCase
      */
     private function buildConfig(SentinelResolver $resolver, array $options): array
     {
-        return (new \ReflectionMethod($resolver, 'buildSentinelConfig'))->invoke($resolver, $options);
+        return new \ReflectionMethod($resolver, 'buildSentinelConfig')->invoke($resolver, $options);
     }
 
     #[Test]

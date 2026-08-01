@@ -25,6 +25,7 @@ final class SentinelResolver
      *   persistent_id     string optional Sentinel persistent connection ID
      *   tls               bool   enable TLS for the Sentinel connection itself
      *   ca_file, cert_file, key_file, peer_name, verify_peer, verify_peer_name, allow_self_signed
+     *
      * @param array<string, mixed> $options
      */
     public function resolveMaster(array $options): Endpoint

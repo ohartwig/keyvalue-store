@@ -19,10 +19,11 @@ final class TlsContextBuilder
      *  - allow_self_signed (bool) default: false
      *  - peer_name (string) override SNI/peer name
      *
-     * @throws \InvalidArgumentException if cert_file is set without key_file or vice versa
      * @param array<string, mixed> $options
      *
      * @return array{ssl: array<string, mixed>}|null the stream context, or null when TLS is off
+     *
+     * @throws \InvalidArgumentException if cert_file is set without key_file or vice versa
      */
     public function build(array $options): ?array
     {

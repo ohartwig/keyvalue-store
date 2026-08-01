@@ -205,6 +205,7 @@ final class KeyValueLockingStrategy implements LockingStrategyInterface, LoggerA
      * Map TYPO3_CONF_VARS locking configuration to KeyValueConnectionFactory options.
      *
      * phpredis camelCase keys are primary; legacy snake_case/TYPO3-style keys are aliased.
+     *
      * @param array<string, mixed> $cfg
      *
      * @return array<string, mixed>

@@ -15,20 +15,19 @@ namespace Moselwal\KeyValueStore\Connection\ValueObject;
 final class ConnectionParams
 {
     /**
-     * @param float             $connectTimeout phpredis: connectTimeout (seconds, 0 = unlimited)
-     * @param float             $readTimeout    phpredis: readTimeout    (seconds, 0 = unlimited)
-     * @param int               $retryInterval  phpredis: retryInterval  (milliseconds)
-     * @param int               $database       phpredis: database
-     * @param string|array|null $auth           phpredis: auth — null (no auth), string (password),
-     *                                          ['password'] (legacy), ['user','password'] (ACL)
-     * @param string|bool       $persistent     phpredis: persistent — false (off), true (auto-ID),
-     *                                          string (explicit persistent ID)
-     * @param array|null        $backoff        phpredis: backoff — reconnection backoff config, e.g.
-     *                                          ['algorithm' => Redis::BACKOFF_ALGORITHM_DECORRELATED_JITTER,
-     *                                          'base' => 500, 'cap' => 750]
-     *
+     * @param float                             $connectTimeout phpredis: connectTimeout (seconds, 0 = unlimited)
+     * @param float                             $readTimeout    phpredis: readTimeout    (seconds, 0 = unlimited)
+     * @param int                               $retryInterval  phpredis: retryInterval  (milliseconds)
+     * @param int                               $database       phpredis: database
+     * @param string|array|null                 $auth           phpredis: auth — null (no auth), string (password),
+     *                                                          ['password'] (legacy), ['user','password'] (ACL)
+     * @param string|bool                       $persistent     phpredis: persistent — false (off), true (auto-ID),
+     *                                                          string (explicit persistent ID)
+     * @param array|null                        $backoff        phpredis: backoff — reconnection backoff config, e.g.
+     *                                                          ['algorithm' => Redis::BACKOFF_ALGORITHM_DECORRELATED_JITTER,
+     *                                                          'base' => 500, 'cap' => 750]
      * @param string|array{string, string}|null $auth
-     * @param array<string, mixed>|null $backoff
+     * @param array<string, mixed>|null         $backoff
      */
     public function __construct(
         public readonly float $connectTimeout,
@@ -55,6 +54,7 @@ final class ConnectionParams
      *   persistent      mixed   phpredis-style persistent value (string|bool)
      *   persistent_id   string  legacy: treated as persistent string ID
      *   backoff         array   phpredis backoff config
+     *
      * @param array<string, mixed> $options
      */
     public static function fromOptions(array $options): self
@@ -79,6 +79,7 @@ final class ConnectionParams
      *   1. 'auth' key — passed through as-is (phpredis native)
      *   2. 'password' + optional 'username' — converted to phpredis auth format
      *   3. null — no authentication
+     *
      * @param array<string, mixed> $options
      *
      * @return string|array{string, string}|null password, or [username, password] when a user is set
@@ -107,6 +108,7 @@ final class ConnectionParams
      *   2. 'persistent' as truthy  — persistent on with auto-generated ID
      *   3. 'persistent_id' (string) — legacy alias for a string persistent ID
      *   4. false                   — no persistent connection
+     *
      * @param array<string, mixed> $options
      */
     private static function resolvePersistent(array $options): string|bool

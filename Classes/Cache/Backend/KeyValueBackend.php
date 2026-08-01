@@ -52,6 +52,7 @@ final class KeyValueBackend extends RedisBackend
     /**
      * All raw options passed by CacheManager, stored for use in buildFactoryOptions().
      * This includes TLS/sentinel/backoff keys that have no setter in RedisBackend.
+     *
      * @var array<string, mixed> the options as configured, before core filtered them
      */
     private array $rawOptions = [];
@@ -105,6 +106,7 @@ final class KeyValueBackend extends RedisBackend
     /**
      * TYPO3 14 constructor: CacheManager passes the options array directly.
      * Earlier TYPO3 versions are no longer supported (composer.json: ^14.0).
+     *
      * @param array<string, mixed> $options
      */
     public function __construct(array $options = [])
@@ -277,8 +279,9 @@ final class KeyValueBackend extends RedisBackend
      * **before** invoking Lua — bit-by-bit identical to TYPO3 Core's
      * behaviour (RedisBackend.php:254). The Lua script therefore always
      * receives a positive TTL and uses SETEX, never SET-without-TTL.
+     *
      * @param array<array-key, mixed> $tags core declares a plain array here; narrowing it would
-     *        break contravariance
+     *                                      break contravariance
      */
     public function set(string $entryIdentifier, string $data, array $tags = [], ?int $lifetime = null): void
     {
@@ -511,6 +514,7 @@ final class KeyValueBackend extends RedisBackend
      * the RedisBackend properties set by parent::__construct() via setters.
      * TLS, Sentinel, backoff and any other extra keys come from $this->rawOptions
      * and are merged on top, overriding the defaults where needed.
+     *
      * @return array<string, mixed>
      */
     private function buildFactoryOptions(): array

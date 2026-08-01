@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Redis;
-use ReflectionProperty;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotFoundException;
 
 /**
@@ -40,7 +39,7 @@ final class KeyValueSessionBackendFailurePathsTest extends TestCase
     #[Test]
     public function aRedisFailureWhileReadingBecomesASessionNotFound(): void
     {
-        $redis = $this->createMock(Redis::class);
+        $redis = $this->createMock(\Redis::class);
         $redis->method('get')->willThrowException(new \RedisException('connection lost'));
 
         $backend = $this->backendWith($redis);
@@ -59,7 +58,7 @@ final class KeyValueSessionBackendFailurePathsTest extends TestCase
     #[Test]
     public function aRedisFailureDropsTheConnectionSoTheNextCallCanReconnect(): void
     {
-        $redis = $this->createMock(Redis::class);
+        $redis = $this->createMock(\Redis::class);
         $redis->method('get')->willThrowException(new \RedisException('connection lost'));
 
         $backend = $this->backendWith($redis);
@@ -70,7 +69,7 @@ final class KeyValueSessionBackendFailurePathsTest extends TestCase
             // erwartet — hier geht es um den Zustand danach
         }
 
-        $property = new ReflectionProperty($backend, 'redis');
+        $property = new \ReflectionProperty($backend, 'redis');
         self::assertNull($property->getValue($backend), 'die tote Verbindung wurde nicht verworfen');
     }
 
@@ -81,7 +80,7 @@ final class KeyValueSessionBackendFailurePathsTest extends TestCase
     #[Test]
     public function anUnknownSessionIsReportedWithoutDroppingTheConnection(): void
     {
-        $redis = $this->createMock(Redis::class);
+        $redis = $this->createMock(\Redis::class);
         $redis->method('get')->willReturn(false);
 
         $backend = $this->backendWith($redis);
@@ -93,7 +92,7 @@ final class KeyValueSessionBackendFailurePathsTest extends TestCase
             // erwartet
         }
 
-        $property = new ReflectionProperty($backend, 'redis');
+        $property = new \ReflectionProperty($backend, 'redis');
         self::assertNotNull(
             $property->getValue($backend),
             'eine unbekannte Session darf die Verbindung nicht verwerfen',
@@ -111,13 +110,13 @@ final class KeyValueSessionBackendFailurePathsTest extends TestCase
     #[Test]
     public function aRecordThatIsNotAnArrayBecomesAnEmptyOne(): void
     {
-        $redis = $this->createMock(Redis::class);
+        $redis = $this->createMock(\Redis::class);
         $redis->method('get')->willReturn('"nur ein String"');
 
         self::assertSame([], $this->backendWith($redis)->get('some-session'));
     }
 
-    private function backendWith(Redis $redis): KeyValueSessionBackend
+    private function backendWith(\Redis $redis): KeyValueSessionBackend
     {
         $backend = new KeyValueSessionBackend();
         $backend->initialize('FE', [
@@ -126,7 +125,7 @@ final class KeyValueSessionBackendFailurePathsTest extends TestCase
             'hashSessionIds' => false,
         ]);
 
-        $property = new ReflectionProperty($backend, 'redis');
+        $property = new \ReflectionProperty($backend, 'redis');
         $property->setValue($backend, $redis);
 
         return $backend;

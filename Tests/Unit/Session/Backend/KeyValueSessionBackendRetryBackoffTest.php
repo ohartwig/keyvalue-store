@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Moselwal\KeyValueStore\Tests\Unit\Session\Backend;
 
 use Moselwal\KeyValueStore\Connection\ConnectionFactoryInterface;
-use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use Moselwal\KeyValueStore\Session\Backend\KeyValueSessionBackend;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
