@@ -7,6 +7,9 @@ namespace Moselwal\KeyValueStore\Tests\Functional\Session\Backend;
 use Moselwal\KeyValueStore\Session\Backend\KeyValueSessionBackend;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
+use Redis;
+use RedisException;
+use Throwable;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotFoundException;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotUpdatedException;
 
@@ -20,7 +23,17 @@ use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotUpdatedException;
 final class KeyValueSessionBackendFunctionalTest extends TestCase
 {
     private KeyValueSessionBackend $sessionBackend;
-    private \Redis $redis;
+    private Redis $redis;
+
+    /**
+     * Ob die Verbindung wirklich steht.
+     *
+     * `markTestSkipped` in setUp() beendet nur den Testkoerper — tearDown()
+     * laeuft trotzdem. Ohne dieses Flag griff es auf eine nie verbundene
+     * Redis-Instanz zu und machte aus jedem uebersprungenen Test einen Fehler
+     * ("Redis server went away"), im Wechsel: S E S E S E.
+     */
+    private bool $redisAvailable = false;
     private string $prefix = 'typo3:sess:test:';
 
     protected function setUp(): void
@@ -29,11 +42,12 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
         $port = (int) (getenv('REDIS_PORT') ?: 6379);
 
         try {
-            $this->redis = new \Redis();
+            $this->redis = new Redis();
             $this->redis->connect($host, $port, 1.0);
             $this->redis->ping();
-        } catch (\RedisException) {
-            self::markTestSkipped('Redis is not available at ' . $host . ':' . $port);
+            $this->redisAvailable = true;
+        } catch (RedisException) {
+            self::markTestSkipped('Redis is not available at '.$host.':'.$port);
         }
 
         // Use database 15 for tests to avoid collisions
@@ -57,22 +71,34 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
 
     protected function tearDown(): void
     {
+        if (!$this->redisAvailable) {
+            return;
+        }
+
         $this->flushTestKeys();
         try {
             $this->redis->close();
-        } catch (\Throwable) {
+        } catch (Throwable) {
         }
     }
 
     private function flushTestKeys(): void
     {
-        $cursor = 0;
+        // Bewusst Zeichen fuer Zeichen wie KeyValueSessionBackend::getAll():
+        // phpredis nimmt `scan($iterator, ?string $pattern, int $count)`, nicht
+        // das Options-Array von Predis — das war hier eingetragen und wirft
+        // einen TypeError. Der Startwert ist `null`, nicht `0`, und der Abbruch
+        // vergleicht nach `(int)`-Wandlung: phpredis gibt den Cursor als
+        // Zeichenkette zurueck, und ein strikter Vergleich gegen 0 laeuft dann
+        // ewig.
+        $cursor = null;
         do {
-            $keys = $this->redis->scan($cursor, ['match' => $this->prefix . '*', 'count' => 100]);
-            if (false !== $keys && count($keys) > 0) {
-                $this->redis->del($keys);
+            $keys = $this->redis->scan($cursor, $this->prefix.'*', 100);
+            if (false === $keys || [] === $keys) {
+                continue;
             }
-        } while (0 !== $cursor);
+            $this->redis->del($keys);
+        } while (0 !== (int) $cursor);
     }
 
     // -----------------------------------------------------------------------
@@ -246,13 +272,13 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
     {
         // Create multiple sessions rapidly to exercise connection pooling
         for ($i = 0; $i < 10; ++$i) {
-            $this->sessionBackend->set('concurrent-' . $i, ['ses_data' => 'data-' . $i]);
+            $this->sessionBackend->set('concurrent-'.$i, ['ses_data' => 'data-'.$i]);
         }
 
         // Read them all back
         for ($i = 0; $i < 10; ++$i) {
-            $result = $this->sessionBackend->get('concurrent-' . $i);
-            self::assertSame('data-' . $i, $result['ses_data']);
+            $result = $this->sessionBackend->get('concurrent-'.$i);
+            self::assertSame('data-'.$i, $result['ses_data']);
         }
     }
 }
