@@ -1,3 +1,10 @@
+# [4.6.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.5...v4.6.0) (2026-08-01)
+
+
+### Features
+
+* **commit-signing:** add .gitsigners + lefthook hint (G-SDLC-002 step 3) ([7136609](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/7136609d5d04151bb500f9ab53981133779c1997))
+
 ## [4.5.5](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.4...v4.5.5) (2026-07-29)
 
 
