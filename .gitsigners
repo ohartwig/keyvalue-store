@@ -1,0 +1,44 @@
+# Allowed signers for git commits in this repository.
+#
+# Policy: https://git.ole-hartwig.eu/development/gitlab-profile/-/blob/main/igs/engineering/commit-signing-policy.md
+# Standard: ed25519 signing key on YubiKey 5 Series, FIDO2 resident, verify-required.
+#
+# Format follows the OpenSSH allowed-signers convention and is consumed by
+# `git verify-commit` and the commit-signing/verify CI gate:
+#
+#   <email-identity> namespaces="git" <ssh-public-key-or-gpg-fingerprint>
+#
+# One line per authorised signer. CODEOWNERS controls who can edit this file
+# (same review pool as security-sensitive changes per the policy).
+#
+# To enrol (per engineer, once):
+#   ssh-keygen -t ed25519 -O resident -O verify-required \
+#     -C "you@moselwal.de" -f ~/.ssh/moselwal-signing
+#   # Add the public key to your GitLab profile under "SSH signing keys"
+#   # (the auth SSH key list is separate — GitLab distinguishes the usage).
+#   # Then append one line below:
+#   #   you@moselwal.de namespaces="git" ssh-ed25519 AAAA... you@moselwal.de
+#
+# GPG signing remains acceptable when paired with a YubiKey-resident GPG
+# key already registered with GitLab; use the GPG fingerprint form on
+# the line for that case.
+
+# --- Eingetragene Signierer ---------------------------------------------------
+#
+# Die Schluessel stammen aus GitLabs eigenem Bestand (GET /users/<id>/keys) und
+# nicht von einem Entwicklerplatz: was GitLab als Signier-Schluessel dieser
+# Konten kennt, ist dieselbe Menge, gegen die GitLab die Signatur-Abzeichen in
+# der Oberflaeche prueft. Zwei Quellen waeren zwei Wahrheiten.
+
+mail@ole-hartwig.eu namespaces="git" sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIK6JENxGId8d8Yh/EdHvLc4GMIeBTOyIArZfezEUkb0bAAAABHNzaDo= yubikey-resident-2026-07
+coding-agent@ole-hartwig.eu namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAeevu+Rgv6Q4eKVSOuofIT1SzulbBfALtkWCcs9t8ad koh-coding-agent-signing-2026-07
+
+# Der Renovate-Bot steht NICHT hier, und das ist kein Versehen: er signiert mit
+# GPG, nicht mit SSH. Die Datei hier ist eine OpenSSH-allowed-signers-Datei;
+# git zieht sie ueber gpg.ssh.allowedSignersFile ausschliesslich fuer
+# SSH-Signaturen heran. Eine GPG-Signatur prueft git gegen den Schluesselbund —
+# ein GPG-Fingerabdruck in dieser Datei waere wirkungslos und wuerde einen
+# Schutz vortaeuschen, den es nicht gibt.
+#
+# Sein oeffentlicher Schluessel liegt daher als .gitsigners.d/renovate-bot.asc
+# daneben; der Pruef-Job importiert alles aus diesem Verzeichnis.
