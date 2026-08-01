@@ -6,7 +6,6 @@ namespace Moselwal\KeyValueStore\Tests\Unit\Cache\Backend;
 
 use Moselwal\KeyValueStore\Cache\Backend\KeyValueBackend;
 use Moselwal\KeyValueStore\Connection\ConnectionFactoryInterface;
-use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

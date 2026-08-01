@@ -8,8 +8,6 @@ use Moselwal\KeyValueStore\Session\Backend\KeyValueSessionBackend;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Redis;
-use RedisException;
-use Throwable;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotFoundException;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotUpdatedException;
 
@@ -23,7 +21,7 @@ use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotUpdatedException;
 final class KeyValueSessionBackendFunctionalTest extends TestCase
 {
     private KeyValueSessionBackend $sessionBackend;
-    private Redis $redis;
+    private \Redis $redis;
 
     /**
      * Ob die Verbindung wirklich steht.
@@ -42,12 +40,12 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
         $port = (int) (getenv('REDIS_PORT') ?: 6379);
 
         try {
-            $this->redis = new Redis();
+            $this->redis = new \Redis();
             $this->redis->connect($host, $port, 1.0);
             $this->redis->ping();
             $this->redisAvailable = true;
-        } catch (RedisException) {
-            self::markTestSkipped('Redis is not available at '.$host.':'.$port);
+        } catch (\RedisException) {
+            self::markTestSkipped('Redis is not available at ' . $host . ':' . $port);
         }
 
         // Use database 15 for tests to avoid collisions
@@ -78,7 +76,7 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
         $this->flushTestKeys();
         try {
             $this->redis->close();
-        } catch (Throwable) {
+        } catch (\Throwable) {
         }
     }
 
@@ -93,7 +91,7 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
         // ewig.
         $cursor = null;
         do {
-            $keys = $this->redis->scan($cursor, $this->prefix.'*', 100);
+            $keys = $this->redis->scan($cursor, $this->prefix . '*', 100);
             if (false === $keys || [] === $keys) {
                 continue;
             }
@@ -272,13 +270,13 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
     {
         // Create multiple sessions rapidly to exercise connection pooling
         for ($i = 0; $i < 10; ++$i) {
-            $this->sessionBackend->set('concurrent-'.$i, ['ses_data' => 'data-'.$i]);
+            $this->sessionBackend->set('concurrent-' . $i, ['ses_data' => 'data-' . $i]);
         }
 
         // Read them all back
         for ($i = 0; $i < 10; ++$i) {
-            $result = $this->sessionBackend->get('concurrent-'.$i);
-            self::assertSame('data-'.$i, $result['ses_data']);
+            $result = $this->sessionBackend->get('concurrent-' . $i);
+            self::assertSame('data-' . $i, $result['ses_data']);
         }
     }
 }

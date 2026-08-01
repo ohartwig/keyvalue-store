@@ -119,6 +119,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      * Defaults to true. Disabling is supported for legacy migrations only —
      * raw session IDs in Redis allow any operator with read access to the
      * cache to lift active sessions.
+     *
      * @param array<array-key, mixed> $configuration
      */
     private bool $hashSessionIds = true;
@@ -175,18 +176,16 @@ final class KeyValueSessionBackend implements SessionBackendInterface
         // hash of the empty-string-keyed HMAC — predictable and useless
         // as a security measure. Fail loudly instead.
         if ($this->hashSessionIds && '' === $this->hashSecret) {
-            throw new \InvalidArgumentException(
-                'KeyValueSessionBackend: hashSessionIds=true but no hashSecret/$TYPO3_CONF_VARS[SYS][encryptionKey] is configured',
-                1733012001
-            );
+            throw new \InvalidArgumentException('KeyValueSessionBackend: hashSessionIds=true but no hashSecret/$TYPO3_CONF_VARS[SYS][encryptionKey] is configured', 1733012001);
         }
     }
 
     /**
      * Read session data.
      *
-     * @throws SessionNotFoundException when the session does not exist
      * @return array<array-key, mixed>
+     *
+     * @throws SessionNotFoundException when the session does not exist
      */
     public function get(string $sessionId): array
     {
@@ -221,6 +220,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      *   - Exit the loop when the cursor becomes `0` (phpredis signals
      *     end-of-iteration that way), not when it falls below 1 —
      *     `!== 0` keeps us safe against any string-typed cursor variants.
+     *
      * @return list<array<array-key, mixed>>
      */
     public function getAll(): array
@@ -264,10 +264,11 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      *
      * Enforces ses_id = $sessionId and updates ses_tstamp per interface contract.
      *
-     * @throws SessionNotCreatedException on write failure
      * @param array<array-key, mixed> $sessionData
      *
      * @return array<array-key, mixed>
+     *
+     * @throws SessionNotCreatedException on write failure
      */
     public function set(string $sessionId, array $sessionData): array
     {
@@ -296,10 +297,11 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      *
      * Preserves the existing TTL. Enforces ses_id = $sessionId and updates ses_tstamp.
      *
-     * @throws SessionNotUpdatedException when the session is missing or the write fails
      * @param array<array-key, mixed> $sessionData
      *
      * @return array<array-key, mixed>
+     *
+     * @throws SessionNotUpdatedException when the session is missing or the write fails
      */
     public function update(string $sessionId, array $sessionData): array
     {

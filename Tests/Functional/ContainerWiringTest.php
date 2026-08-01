@@ -93,7 +93,7 @@ final class ContainerWiringTest extends FunctionalTestCase
         // kuenftiges unbekanntes Tag den Test nicht zum Einsturz bringt,
         // sondern nur diesen einen Eintrag unlesbar macht.
         $parsed = Yaml::parseFile(
-            \dirname(__DIR__, 2).'/Configuration/Services.yaml',
+            \dirname(__DIR__, 2) . '/Configuration/Services.yaml',
             Yaml::PARSE_CONSTANT | Yaml::PARSE_CUSTOM_TAGS,
         );
 
