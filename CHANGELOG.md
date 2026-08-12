@@ -1,3 +1,10 @@
+## [4.6.1](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.0...v4.6.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency php to ^8.5.9 ([3cd7c30](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/3cd7c300188dac2f5c0265f76d16e72813b7cab5))
+
 # [4.6.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.5.5...v4.6.0) (2026-08-01)
 
 
