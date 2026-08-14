@@ -13,11 +13,11 @@
 #
 # To enrol (per engineer, once):
 #   ssh-keygen -t ed25519 -O resident -O verify-required \
-#     -C "you@moselwal.de" -f ~/.ssh/moselwal-signing
+#     -C "you@ole-hartwig.eu" -f ~/.ssh/moselwal-signing
 #   # Add the public key to your GitLab profile under "SSH signing keys"
 #   # (the auth SSH key list is separate — GitLab distinguishes the usage).
 #   # Then append one line below:
-#   #   you@moselwal.de namespaces="git" ssh-ed25519 AAAA... you@moselwal.de
+#   #   you@ole-hartwig.eu namespaces="git" ssh-ed25519 AAAA... you@ole-hartwig.eu
 #
 # GPG signing remains acceptable when paired with a YubiKey-resident GPG
 # key already registered with GitLab; use the GPG fingerprint form on
