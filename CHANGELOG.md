@@ -1,3 +1,11 @@
+## [4.6.2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.1...v4.6.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* allow the infection extension installer plugin ([3ac361a](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/3ac361ab9a2fd8cf0f6b60fb1e6840c6e82d5899))
+* **ci:** point at the current hosts ([a4faed4](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/a4faed408adbb6f34eb9191d6f3482c32464cd32))
+
 ## [4.6.1](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.0...v4.6.1) (2026-08-12)
 
 
