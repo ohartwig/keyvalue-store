@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: keyvalue-store
 Upstream-Contact: Kai Ole Hartwig <support@ole-hartwig.eu>
-Source: https://gitlab.moselwal.io/development/moselwal/keyvalue-store
+Source: https://git.ole-hartwig.eu/development/moselwal/keyvalue-store
 
 Files: *
 Copyright: 2026 Moselwal Digitalagentur GmbH, Kai Ole Hartwig

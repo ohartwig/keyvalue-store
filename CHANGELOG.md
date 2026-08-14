@@ -49,41 +49,41 @@
 * **ci:** adopt github-mirror 1.2.10 (skip mirror when no token) ([61e0da7](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/61e0da7deb62758d4313b74b1627c188003bb278))
 * **ci:** github-mirror 1.2.11 (contains skip-if-no-token) ([636a41b](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/636a41b70f5cbf03c73ebfaba993035d37c36840))
 
-# [4.5.0](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/compare/v4.4.1...v4.5.0) (2026-06-11)
+# [4.5.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.4.1...v4.5.0) (2026-06-11)
 
 
 ### Bug Fixes
 
-* **release:** re-tag to publish to TER for the first time ([2fae9aa](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/2fae9aa166841ba3f0a14900806f437ab6b8f936))
+* **release:** re-tag to publish to TER for the first time ([2fae9aa](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/2fae9aa166841ba3f0a14900806f437ab6b8f936))
 
 
 ### Features
 
-* **release:** add develop branch as rc-prerelease channel ([1193bf6](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/1193bf62cc7945ba633cc75cc1ec7a9931da95f7))
+* **release:** add develop branch as rc-prerelease channel ([1193bf6](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/1193bf62cc7945ba633cc75cc1ec7a9931da95f7))
 
-## [4.4.1](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/compare/v4.4.0...v4.4.1) (2026-06-07)
-
-
-### Bug Fixes
-
-* **release:** drop [skip ci] from semantic-release commit ([44a9e14](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/44a9e1402c8a4846adf1e001f5541b01fe47ade8))
-
-# [4.4.0](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/compare/v4.3.4...v4.4.0) (2026-06-07)
+## [4.4.1](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.4.0...v4.4.1) (2026-06-07)
 
 
 ### Bug Fixes
 
-* **ci:** allow_failure on 9 known-broken component jobs ([87926b0](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/87926b08c752239b7e6ab9773ff4d1c0a60d7387))
-* composer normalize + require-checker whitelist for transitive symbols ([566fd43](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/566fd43b08bc2248907a9ce854e2dd6e41c650e5))
-* **composer:** add homepage field ([2e78769](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/2e78769770ac9fba0848c156d7146f9b8862533d))
-* extension-key keyvalue-store -> keyvalue_store ([5bf846f](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/5bf846fce0109a60ff5a5d90c2864ae89c0d3b64))
-* **md:** replace bare fenced codeblocks with ```text ([144499a](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/144499a4ae6bf0cd4012482d240d2fba92c3470f))
-* **md:** scope markdownlint to public surfaces ([8a0008b](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/8a0008b0f7ce5ecae291f034e97db7b90daa6f28))
+* **release:** drop [skip ci] from semantic-release commit ([44a9e14](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/44a9e1402c8a4846adf1e001f5541b01fe47ade8))
+
+# [4.4.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.3.4...v4.4.0) (2026-06-07)
+
+
+### Bug Fixes
+
+* **ci:** allow_failure on 9 known-broken component jobs ([87926b0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/87926b08c752239b7e6ab9773ff4d1c0a60d7387))
+* composer normalize + require-checker whitelist for transitive symbols ([566fd43](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/566fd43b08bc2248907a9ce854e2dd6e41c650e5))
+* **composer:** add homepage field ([2e78769](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/2e78769770ac9fba0848c156d7146f9b8862533d))
+* extension-key keyvalue-store -> keyvalue_store ([5bf846f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/5bf846fce0109a60ff5a5d90c2864ae89c0d3b64))
+* **md:** replace bare fenced codeblocks with ```text ([144499a](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/144499a4ae6bf0cd4012482d240d2fba92c3470f))
+* **md:** scope markdownlint to public surfaces ([8a0008b](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/8a0008b0f7ce5ecae291f034e97db7b90daa6f28))
 
 
 ### Features
 
-* **ci:** add TER publish to release stage ([76c77c2](https://gitlab.moselwal.io/development/moselwal/keyvalue-store/commit/76c77c26715b64d6a08b7687784300857c768235))
+* **ci:** add TER publish to release stage ([76c77c2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/76c77c26715b64d6a08b7687784300857c768235))
 
 # Changelog
 
