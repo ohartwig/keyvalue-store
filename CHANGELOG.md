@@ -1,3 +1,9 @@
+## [4.6.4](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.3...v4.6.4) (2026-08-15)
+
+### :repeat: Chores
+
+* **ci:** drop the local .releaserc.yml, which was overriding the preset ([286a8e1](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/286a8e10feec5ae3f9064798f3cb5f9cda0db185))
+
 ## [4.6.3](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.2...v4.6.3) (2026-08-15)
 
 
