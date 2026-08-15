@@ -1,3 +1,10 @@
+## [4.6.3](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.2...v4.6.3) (2026-08-15)
+
+
+### Bug Fixes
+
+* **tests:** order tests by dependency and chance, never by defects ([768e2c5](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/768e2c5131fcb84b7e6b0754b6886835159d48cc))
+
 ## [4.6.2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.1...v4.6.2) (2026-08-14)
 
 
