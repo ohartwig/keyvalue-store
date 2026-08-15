@@ -1,9 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    executionOrder is "depends,random", not "depends,defects", and that is not
+    a preference.
+
+    Infection rewrites this file into a temporary copy of its own and forces
+    recordTestRunHistory="false" there, together with failOnWarning="true" and
+    stopOnDefect="true". Ordering by defects needs that history, so PHPUnit
+    raises a test runner warning before the first test, and the forced
+    stopOnDefect turns the warning into "No tests executed!" and exit 1.
+    Infection then reports the suite as not passing, which reads as a broken
+    test suite rather than as a configuration incompatibility — the suite
+    itself is green, and test:phpunit:unit says so on the same commit.
+
+    First seen on moselwal/secret-resolver (job 841918). This file carried the
+    same attribute, inherited from the same template.
+
+    Random order is what Infection asks for anyway: a mutation score is only
+    worth reading over a suite with no hidden inter-test dependencies.
+-->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
          bootstrap="../vendor/autoload.php"
          cacheDirectory="../.phpunit.cache"
-         executionOrder="depends,defects"
+         executionOrder="depends,random"
+         resolveDependencies="true"
          beStrictAboutOutputDuringTests="true"
          failOnRisky="true"
          failOnWarning="true"
