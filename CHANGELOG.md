@@ -1,3 +1,9 @@
+## [4.6.6](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.5...v4.6.6) (2026-09-03)
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([566f207](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/566f207823d2ef7b8d15cd63b65009808052f5e5))
+
 ## [4.6.5](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.4...v4.6.5) (2026-09-02)
 
 ### :bug: Fixes
