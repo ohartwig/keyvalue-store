@@ -1,3 +1,10 @@
+## [4.6.7](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.6...v4.6.7) (2026-09-10)
+
+### :repeat: Chores
+
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2 ([b90c942](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/b90c9420396fdcb247075b03d2eb730c09b4f358))
+* **deps:** update dependency ergebnis/composer-normalize to ^2.53.0 ([7034dee](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/7034dee6d121a779652b26ebc8ba8c6ee2b895a4))
+
 ## [4.6.6](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.5...v4.6.6) (2026-09-03)
 
 ### :repeat: Chores
