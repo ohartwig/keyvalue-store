@@ -1,3 +1,13 @@
+## [4.6.9](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.8...v4.6.9) (2026-09-27)
+
+### :bug: Fixes
+
+* **deps:** update dependency php to ^8.5.11 ([155521c](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/155521c47af47ba097f9a323dbafee4b16112c99))
+
+### :repeat: Chores
+
+* **deps:** update dependency ergebnis/composer-normalize to ^2.54.0 ([31743ba](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/31743ba5a61ef00679221fc47628ec665e17f2de))
+
 ## [4.6.8](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.7...v4.6.8) (2026-09-27)
 
 ### :bug: Fixes
