@@ -34,7 +34,6 @@ final class SentinelResolver
         $service = (string) ($options['sentinel_service'] ?? '');
         $connectTimeout = (float) ($options['connectTimeout'] ?? $options['timeout'] ?? 1.0);
 
-        /** @phpstan-ignore-next-line */
         $sentinel = new \RedisSentinel($sentinelConfig);
 
         $addr = $sentinel->getMasterAddrByName($service);
