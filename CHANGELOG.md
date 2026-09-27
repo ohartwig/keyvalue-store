@@ -1,3 +1,13 @@
+## [4.6.8](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.7...v4.6.8) (2026-09-27)
+
+### :bug: Fixes
+
+* **phpstan:** ueberfluessiges Ignore vor RedisSentinel entfernen ([2918b59](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/2918b596f630316d27c33393d02352f16fc3df32))
+
+### :repeat: Continuous Integrations
+
+* release with yasrt ([c61e64f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/c61e64f1f1cc7495d4ec5ec85d419e2c4d825c58))
+
 ## [4.6.7](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.6...v4.6.7) (2026-09-10)
 
 ### :repeat: Chores
