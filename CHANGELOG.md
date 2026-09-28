@@ -1,3 +1,17 @@
+## [4.6.10](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.9...v4.6.10) (2026-09-28)
+
+### :memo: Documentation
+
+* give the shell examples in CONTRIBUTING.md a language ([62dd57f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/62dd57ff75236728e5ad1510fe31828e6f068f5f))
+* add full licence text, contribution guide and code of conduct ([a319ccd](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/a319ccd7b9903dd22c4674ef4ccf4a730301b040))
+
+### :repeat: Chores
+
+* **ci:** restore the GitHub mirror on release tags ([6094130](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/60941303283ad42130f54a8b5a60eaed170ff1be))
+* point package metadata at the public GitHub repository ([2d33ce3](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/2d33ce3bf27bca5b172293af79610f8801da9d45))
+* **deps:** update dependency mstruebing/editorconfig-checker to v3.11.3 ([da9deca](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/da9decac69384f9c756beb3096df7fa3fdfa2948))
+* **deps:** update dependency davidanson/markdownlint-cli2 to v0.23.3 ([88f90be](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/88f90be656a7f65fc092415b20f493fac1aba85f))
+
 ## [4.6.9](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.8...v4.6.9) (2026-09-27)
 
 ### :bug: Fixes
