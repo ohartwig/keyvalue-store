@@ -16,7 +16,6 @@
         {
             "name": "Kai Ole Hartwig",
             "email": "support@ole-hartwig.eu",
-            "homepage": "https://moselwal.de",
             "role": "Maintainer"
         },
         {
@@ -25,11 +24,10 @@
             "role": "Developer"
         }
     ],
-    "homepage": "https://moselwal.de",
+    "homepage": "https://github.com/ohartwig/keyvalue-store",
     "support": {
-        "issues": "https://github.com/Moselwal-Digitalagentur/keyvalue-store/issues",
-        "source": "https://github.com/Moselwal-Digitalagentur/keyvalue-store",
-        "docs": "https://moselwal.de/open-source/keyvalue-store"
+        "issues": "https://github.com/ohartwig/keyvalue-store/issues",
+        "source": "https://github.com/ohartwig/keyvalue-store"
     },
     "require": {
         "php": "^8.5.11",
