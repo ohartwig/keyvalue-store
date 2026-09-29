@@ -1,5 +1,5 @@
 includes:
-    - vendor/moselwal/dev-typo3/config/typo3/phpstan.neon
+    - vendor/koh/dev-typo3/config/typo3/phpstan.neon
 
 parameters:
     paths:
