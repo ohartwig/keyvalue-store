@@ -1,3 +1,18 @@
+## [4.6.11](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.10...v4.6.11) (2026-09-29)
+
+### :repeat: Continuous Integrations
+
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.12 ([83a9faa](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/83a9faae5dfe6b36f79691e3265e33406220e063))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.10 ([21e5dcd](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/21e5dcd509b740a2eb0368d22beeb1663feb2117))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.9 ([1e37356](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/1e37356825b9a6a765ad9055dff56a0a98f7b43a))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.6 ([776b6dd](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/776b6dd14d1c7e80a18f572ee551d411fc8336d6))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.3 ([4966919](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/4966919fbee7717157d5571b9687ad66a1aa91fa))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.2 ([1b5e974](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/1b5e974c501d56470565906317ed114147017d41))
+
+### :repeat: Chores
+
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.1 ([196e4b3](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/196e4b3ec6cdb5f8ca2ec2059aadc97fb0cf5cc2))
+
 ## [4.6.10](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.9...v4.6.10) (2026-09-28)
 
 ### :memo: Documentation
