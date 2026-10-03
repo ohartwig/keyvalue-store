@@ -1,3 +1,20 @@
+## [4.6.12](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.11...v4.6.12) (2026-10-03)
+
+### :repeat: Continuous Integrations
+
+* follow composed-default-pipelines on the rolling major tag ([d536d5e](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/d536d5e0468442978f3f02fea8e412b9d5fd0203))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.27 ([4212ec6](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/4212ec6841fd77c21380ca3ef4b75316fd63ffc2))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.26 ([97b05a9](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/97b05a9ad2f0ca3fd5e6369c384ce34b6f7bd8af))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.25 ([590b2cb](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/590b2cbef04a5829e290026e88670f84cc0a99a2))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.24 ([e0ed65e](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/e0ed65e4b770927a22e14a4c0148c0930ecf0713))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.21 ([1b0e430](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/1b0e430700d575071ef89506b503c281dd7d6ee4))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.20 ([4b5cf45](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/4b5cf459a69494de4407dcf1637b99bcd00c9b3f))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.19 ([064b797](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/064b7974937d7d64a62dc2308736e8fd6bb966a6))
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([0f4925f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/0f4925f2ff758b2bceb4f82c06ead6ea823d45ef))
+
 ## [4.6.11](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.10...v4.6.11) (2026-09-29)
 
 ### :repeat: Continuous Integrations
