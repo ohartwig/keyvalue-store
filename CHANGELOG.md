@@ -1,3 +1,14 @@
+## [4.6.14](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.13...v4.6.14) (2026-10-16)
+
+### :repeat: Continuous Integrations
+
+* drop the TER publish, Packagist is enough ([4355f1f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/4355f1f10ec132295d7aba1c32b576a10c4bfdaa))
+* publish releases to the TYPO3 Extension Repository ([dabdba4](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/dabdba4a67365781740ccd335454a501ba49c99a))
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([c1ce93e](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/c1ce93ec2202b9b87f9d105abc495fbe08ee6414))
+
 ## [4.6.13](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.12...v4.6.13) (2026-10-05)
 
 ### :repeat: Chores
