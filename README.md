@@ -1,7 +1,7 @@
 # KeyValue Store — TYPO3 Extension
 
 [![TYPO3 14](https://img.shields.io/badge/TYPO3-14.x-orange.svg)](https://get.typo3.org/)
-[![PHP 8.5+](https://img.shields.io/badge/PHP-8.5%2B-blue.svg)](https://php.net/)
+[![PHP 8.3+](https://img.shields.io/badge/PHP-8.3%2B-blue.svg)](https://php.net/)
 [![phpredis 6.3+](https://img.shields.io/badge/phpredis-6.3%2B-red.svg)](https://github.com/phpredis/phpredis)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/License-GPL--2.0--or--later-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 
@@ -26,7 +26,7 @@ composer require moselwal/keyvalue-store
 
 ### Requirements
 
-- PHP 8.5+
+- PHP 8.3+
 - TYPO3 14.x
 - `ext-redis` >= 6.3 (phpredis with the v6 constructor-config API,
   Sentinel resolver, TLS context, and decorrelated-jitter backoff)
@@ -233,7 +233,7 @@ installed.
 
 | Package | Type | Purpose |
 |---|---|---|
-| `php` ^8.5 | Required | Language baseline |
+| `php` ^8.3 | Required | Language baseline |
 | `typo3/cms-core` ^14.0 | Required | TYPO3 core |
 | `ext-redis` >= 6.3 | Required | phpredis with v6 constructor API |
 | `moselwal/dev` ^5.2 | Dev | Shared QA tooling (phpstan, cs-fixer, etc.) |
