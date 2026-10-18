@@ -1,3 +1,9 @@
+## [4.6.15](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.14...v4.6.15) (2026-10-18)
+
+### :bug: Fixes
+
+* admit PHP 8.3 and test the floor on it ([520c43f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/520c43f051f90421177e8854834eb233de7bfe3d))
+
 ## [4.6.14](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.13...v4.6.14) (2026-10-16)
 
 ### :repeat: Continuous Integrations
