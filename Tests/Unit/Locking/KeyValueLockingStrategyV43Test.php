@@ -48,7 +48,7 @@ final class KeyValueLockingStrategyV43Test extends TestCase
     {
         $strategy = new KeyValueLockingStrategy('test-subject-default');
 
-        $value = new \ReflectionProperty($strategy, 'maxAcquireAttempts')->getValue($strategy);
+        $value = (new \ReflectionProperty($strategy, 'maxAcquireAttempts'))->getValue($strategy);
         self::assertSame(100, $value);
     }
 
@@ -59,7 +59,7 @@ final class KeyValueLockingStrategyV43Test extends TestCase
 
         $strategy = new KeyValueLockingStrategy('test-subject-configurable');
 
-        $value = new \ReflectionProperty($strategy, 'maxAcquireAttempts')->getValue($strategy);
+        $value = (new \ReflectionProperty($strategy, 'maxAcquireAttempts'))->getValue($strategy);
         self::assertSame(7, $value);
     }
 
@@ -70,7 +70,7 @@ final class KeyValueLockingStrategyV43Test extends TestCase
 
         $strategy = new KeyValueLockingStrategy('test-subject-clamped');
 
-        $value = new \ReflectionProperty($strategy, 'maxAcquireAttempts')->getValue($strategy);
+        $value = (new \ReflectionProperty($strategy, 'maxAcquireAttempts'))->getValue($strategy);
         self::assertSame(1, $value);
     }
 
@@ -88,7 +88,7 @@ final class KeyValueLockingStrategyV43Test extends TestCase
         $redis->method('set')->willReturn(false); // tryLock always fails
         $redis->method('blPop')->willReturn(['mutex', 'signal']);
 
-        new \ReflectionProperty($strategy, 'redis')->setValue($strategy, $redis);
+        (new \ReflectionProperty($strategy, 'redis'))->setValue($strategy, $redis);
 
         $this->expectException(LockAcquireException::class);
         $this->expectExceptionCode(1700000013);
@@ -109,7 +109,7 @@ final class KeyValueLockingStrategyV43Test extends TestCase
             ->with(self::anything(), 10) // ttl=10 from setUp
             ->willReturn(['mutex', 'released']);
 
-        new \ReflectionProperty($strategy, 'redis')->setValue($strategy, $redis);
+        (new \ReflectionProperty($strategy, 'redis'))->setValue($strategy, $redis);
 
         $method = new \ReflectionMethod($strategy, 'wait');
         $result = $method->invoke($strategy);
