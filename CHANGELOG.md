@@ -1,3 +1,10 @@
+## [4.6.16](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.15...v4.6.16) (2026-10-30)
+
+### :repeat: Chores
+
+* **deps:** update dependency ergebnis/composer-normalize to ^2.56.0 ([4be4129](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/4be4129cbddbbc2e660177f85a6c864f5e7d3798))
+* **repo-templates:** sync ([5e061d9](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/5e061d9a73620852b36551c95419779b3a1c391f))
+
 ## [4.6.15](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.14...v4.6.15) (2026-10-18)
 
 ### :bug: Fixes
