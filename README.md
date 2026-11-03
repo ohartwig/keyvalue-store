@@ -177,6 +177,15 @@ scheduler tick).
   updates cannot be lost during the rename
 - **`getAll()` via SCAN + MGET** instead of SCAN + N× GET — 24.6×
   faster on 500 sessions
+- **The session ID is never persisted.** The key and the record's
+  `ses_id` both hold `HMAC-SHA256(sessionId, hashSecret)` (the secret
+  defaults to `SYS/encryptionKey`), as core's own backends store the
+  hash; the backend implements `HashableSessionBackendInterface`, so the
+  Backend users module marks the viewer's own session, and `remove()`
+  accepts the plain or the hashed ID. Exception messages never name the
+  session. Records written by earlier versions, which carried the plain
+  ID in `ses_id`, stay readable: `getAll()` reports the hash for them and
+  `get()` rewrites them on the first read (compare-and-set, TTL kept).
 
 ## Locking strategy internals
 

@@ -108,7 +108,7 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
         $data = ['ses_data' => 'test_value', 'ses_userid' => 1];
         $result = $this->sessionBackend->set('session-abc', $data);
 
-        self::assertSame('session-abc', $result['ses_id']);
+        self::assertSame($this->sessionBackend->hash('session-abc'), $result['ses_id']);
         self::assertSame('test_value', $result['ses_data']);
         self::assertArrayHasKey('ses_tstamp', $result);
     }
@@ -119,7 +119,7 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
 
         $result = $this->sessionBackend->get('session-get');
 
-        self::assertSame('session-get', $result['ses_id']);
+        self::assertSame($this->sessionBackend->hash('session-get'), $result['ses_id']);
         self::assertSame('hello', $result['ses_data']);
     }
 
@@ -138,7 +138,7 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
 
         self::assertSame('new', $result['ses_data']);
         self::assertSame('keep', $result['extra']);
-        self::assertSame('session-upd', $result['ses_id']);
+        self::assertSame($this->sessionBackend->hash('session-upd'), $result['ses_id']);
     }
 
     public function testUpdateThrowsForNonexistentSession(): void
@@ -177,7 +177,40 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
 
         $ids = array_column($all, 'ses_id');
         sort($ids);
-        self::assertSame(['sess-1', 'sess-2', 'sess-3'], $ids);
+        $expected = array_map($this->sessionBackend->hash(...), ['sess-1', 'sess-2', 'sess-3']);
+        sort($expected);
+        self::assertSame($expected, $ids);
+    }
+
+    /**
+     * AUD-077-F01: what lands in Valkey must not contain the cookie value,
+     * neither in the key nor in the record.
+     */
+    public function testThePlainSessionIdIsNotPersisted(): void
+    {
+        $this->sessionBackend->set('plain-cookie-value-1234567890', ['ses_data' => 'x']);
+        $this->sessionBackend->update('plain-cookie-value-1234567890', ['ses_data' => 'y']);
+
+        $keys = $this->redis->keys($this->prefix . '*');
+        self::assertCount(1, $keys);
+        $raw = (string) $this->redis->get($keys[0]);
+        self::assertStringNotContainsString('plain-cookie-value-1234567890', $keys[0]);
+        self::assertStringNotContainsString('plain-cookie-value-1234567890', $raw);
+        self::assertSame($this->sessionBackend->hash('plain-cookie-value-1234567890'), json_decode($raw, true)['ses_id'] ?? null);
+    }
+
+    /**
+     * The Backend users module and SessionManager hand the hashed ses_id
+     * from getAll() back to remove().
+     */
+    public function testRemoveAcceptsTheHashedIdFromGetAll(): void
+    {
+        $this->sessionBackend->set('session-by-hash', ['ses_data' => 'bye']);
+
+        self::assertTrue($this->sessionBackend->remove($this->sessionBackend->getAll()[0]['ses_id']));
+
+        $this->expectException(SessionNotFoundException::class);
+        $this->sessionBackend->get('session-by-hash');
     }
 
     public function testSetEnforcesSesId(): void
@@ -187,8 +220,8 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
             'ses_data' => 'value',
         ]);
 
-        // ses_id must be overwritten by the actual session ID
-        self::assertSame('enforced-id', $result['ses_id']);
+        // ses_id must be overwritten by the hash of the actual session ID
+        self::assertSame($this->sessionBackend->hash('enforced-id'), $result['ses_id']);
     }
 
     public function testSetUpdatesSesTimestamp(): void
@@ -212,7 +245,7 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
 
         // Session should still exist (GC doesn't affect unexpired sessions)
         $result = $this->sessionBackend->get('gc-session');
-        self::assertSame('gc-session', $result['ses_id']);
+        self::assertSame($this->sessionBackend->hash('gc-session'), $result['ses_id']);
     }
 
     public function testExpiredSessionsAreCleanedByRedisTtl(): void
@@ -231,7 +264,7 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
 
         // Session exists immediately
         $result = $shortLivedBackend->get('expire-soon');
-        self::assertSame('expire-soon', $result['ses_id']);
+        self::assertSame($this->sessionBackend->hash('expire-soon'), $result['ses_id']);
 
         // Wait for TTL to expire
         sleep(2);
