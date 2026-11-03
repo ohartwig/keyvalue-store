@@ -12,6 +12,7 @@ use Redis;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotCreatedException;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotFoundException;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotUpdatedException;
+use TYPO3\CMS\Core\Session\Backend\HashableSessionBackendInterface;
 use TYPO3\CMS\Core\Session\Backend\SessionBackendInterface;
 
 /**
@@ -19,7 +20,10 @@ use TYPO3\CMS\Core\Session\Backend\SessionBackendInterface;
  *
  * Implements the full TYPO3 SessionBackendInterface contract:
  *   - Session records are stored as JSON-encoded arrays.
- *   - ses_id is always forced to $sessionId on write.
+ *   - ses_id is always forced to hash($sessionId) on write, as in core's
+ *     DatabaseSessionBackend and RedisSessionBackend. The plain session ID
+ *     (the cookie value) is never persisted, never returned by getAll()
+ *     and never put into an exception message.
  *   - ses_tstamp is updated automatically on every write.
  *   - get() throws SessionNotFoundException when the session is missing.
  *   - set() throws SessionNotCreatedException on write failure.
@@ -75,7 +79,7 @@ use TYPO3\CMS\Core\Session\Backend\SessionBackendInterface;
  *     'sentinel_password'    => null,
  *   ],
  */
-final class KeyValueSessionBackend implements SessionBackendInterface
+final class KeyValueSessionBackend implements SessionBackendInterface, HashableSessionBackendInterface
 {
     private const DEFAULT_PORT = 6379;
     private const DEFAULT_DB = 0;
@@ -97,6 +101,23 @@ final class KeyValueSessionBackend implements SessionBackendInterface
         if ttl <= 0 then ttl = tonumber(ARGV[1]) end
         redis.call('SETEX', KEYS[2], ttl, val)
         redis.call('DEL', KEYS[1])
+        return 1
+        LUA;
+
+    /**
+     * Rewrite a record written before v4.7, whose `ses_id` still held the
+     * plain session ID, with the hashed one. Compare-and-set against the
+     * value that was read so a concurrent update() is never overwritten
+     * with older data; the remaining TTL is kept.
+     */
+    private const MIGRATE_SCRIPT = <<<'LUA'
+        if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
+        local ttl = redis.call('PTTL', KEYS[1])
+        if ttl > 0 then
+            redis.call('SET', KEYS[1], ARGV[2], 'PX', ttl)
+        else
+            redis.call('SET', KEYS[1], ARGV[2])
+        end
         return 1
         LUA;
 
@@ -189,20 +210,32 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      */
     public function get(string $sessionId): array
     {
+        $key = $this->key($sessionId);
+
         try {
-            $raw = $this->getRedis()->get($this->key($sessionId));
+            $raw = $this->getRedis()->get($key);
         } catch (\RedisException $e) {
             $this->resetRedis();
-            throw new SessionNotFoundException('Redis error while reading session "' . $sessionId . '": ' . $e->getMessage(), 1730001011, $e);
+            throw new SessionNotFoundException('Redis error while reading session: ' . $e->getMessage(), 1730001011, $e);
         }
 
         if (false === $raw) {
-            throw new SessionNotFoundException('Session "' . $sessionId . '" not found', 1730001010);
+            throw new SessionNotFoundException('Session not found', 1730001010);
         }
 
         $record = json_decode((string) $raw, true);
+        if (!is_array($record)) {
+            return [];
+        }
 
-        return is_array($record) ? $record : [];
+        $hashed = $this->hash($sessionId);
+        if (($record['ses_id'] ?? null) !== $hashed) {
+            // Written before v4.7 (plain ses_id) or carried over by renew().
+            $record['ses_id'] = $hashed;
+            $this->migrateRecord($key, (string) $raw, $record);
+        }
+
+        return $record;
     }
 
     /**
@@ -235,17 +268,23 @@ final class KeyValueSessionBackend implements SessionBackendInterface
                 if (false === $keys || [] === $keys) {
                     continue;
                 }
+                $keys = array_values($keys);
                 $values = $redis->mget($keys);
                 if (!is_array($values)) {
                     continue;
                 }
-                foreach ($values as $raw) {
-                    if (false === $raw || null === $raw) {
+                foreach (array_values($values) as $i => $raw) {
+                    if (false === $raw || null === $raw || !isset($keys[$i])) {
                         // Concurrent expiry between SCAN and MGET.
                         continue;
                     }
                     $record = json_decode((string) $raw, true);
                     if (is_array($record)) {
+                        // ses_id is taken from the key, never from the value:
+                        // records written before v4.7 still carry the plain
+                        // session ID there, and core's Backend users module
+                        // renders ses_id into the page.
+                        $record['ses_id'] = substr($keys[$i], strlen($this->prefix));
                         $sessions[] = $record;
                     }
                 }
@@ -262,7 +301,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
     /**
      * Write new session data.
      *
-     * Enforces ses_id = $sessionId and updates ses_tstamp per interface contract.
+     * Enforces ses_id = hash($sessionId) and updates ses_tstamp per interface contract.
      *
      * @param array<array-key, mixed> $sessionData
      *
@@ -275,27 +314,28 @@ final class KeyValueSessionBackend implements SessionBackendInterface
         $ttl = max(1, (int) ($this->options['sessionLifetime'] ?? self::DEFAULT_SESSION_LIFETIME));
 
         // Interface contract: ses_id is always overwritten; ses_tstamp is updated.
-        $sessionData['ses_id'] = $sessionId;
+        // Like core's backends, ses_id holds the hash, never the cookie value.
+        $sessionData['ses_id'] = $this->hash($sessionId);
         $sessionData['ses_tstamp'] = $GLOBALS['EXEC_TIME'] ?? time();
 
         try {
             $encoded = json_encode($sessionData, JSON_THROW_ON_ERROR);
             $ok = $this->getRedis()->setex($this->key($sessionId), $ttl, $encoded);
             if (!$ok) {
-                throw new SessionNotCreatedException('Could not write session "' . $sessionId . '" to Redis', 1730001020);
+                throw new SessionNotCreatedException('Could not write session to Redis', 1730001020);
             }
 
             return $sessionData;
         } catch (\RedisException $e) {
             $this->resetRedis();
-            throw new SessionNotCreatedException('Redis error while creating session "' . $sessionId . '": ' . $e->getMessage(), 1730001021, $e);
+            throw new SessionNotCreatedException('Redis error while creating session: ' . $e->getMessage(), 1730001021, $e);
         }
     }
 
     /**
      * Update existing session data (partial merge).
      *
-     * Preserves the existing TTL. Enforces ses_id = $sessionId and updates ses_tstamp.
+     * Preserves the existing TTL. Enforces ses_id = hash($sessionId) and updates ses_tstamp.
      *
      * @param array<array-key, mixed> $sessionData
      *
@@ -317,7 +357,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface
                 $raw = $redis->get($key);
                 if (false === $raw) {
                     $redis->unwatch();
-                    throw new SessionNotUpdatedException('Session "' . $sessionId . '" not found, cannot update', 1730001030);
+                    throw new SessionNotUpdatedException('Session not found, cannot update', 1730001030);
                 }
 
                 $existing = json_decode((string) $raw, true);
@@ -327,7 +367,8 @@ final class KeyValueSessionBackend implements SessionBackendInterface
                 $record = array_merge($record, $sessionData);
 
                 // Interface contract: ses_id is always overwritten; ses_tstamp is updated.
-                $record['ses_id'] = $sessionId;
+                // This also replaces a plain ses_id left by a pre-v4.7 record.
+                $record['ses_id'] = $this->hash($sessionId);
                 $record['ses_tstamp'] = $GLOBALS['EXEC_TIME'] ?? time();
 
                 // Preserve the existing TTL; fall back to configured lifetime when the
@@ -351,17 +392,28 @@ final class KeyValueSessionBackend implements SessionBackendInterface
                 return $record;
             } catch (\RedisException $e) {
                 $this->resetRedis();
-                throw new SessionNotUpdatedException('Redis error while updating session "' . $sessionId . '": ' . $e->getMessage(), 1730001032, $e);
+                throw new SessionNotUpdatedException('Redis error while updating session: ' . $e->getMessage(), 1730001032, $e);
             }
         }
 
-        throw new SessionNotUpdatedException('Could not write updated session "' . $sessionId . '" to Redis after ' . $maxRetries . ' attempts due to concurrent modifications', 1730001031);
+        throw new SessionNotUpdatedException('Could not write updated session to Redis after ' . $maxRetries . ' attempts due to concurrent modifications', 1730001031);
     }
 
+    /**
+     * Delete a session record.
+     *
+     * Accepts the plain session ID (core's logout path) as well as the
+     * hashed form that getAll() reports as ses_id, which core hands back
+     * from SessionManager::invalidateAllSessionsByUserId() and the Backend
+     * users module's "end session" action — the same two forms core's
+     * DatabaseSessionBackend::remove() matches.
+     */
     public function remove(string $sessionId): bool
     {
+        $keys = array_values(array_unique([$this->key($sessionId), $this->prefix . $sessionId]));
+
         try {
-            return $this->getRedis()->del($this->key($sessionId)) > 0;
+            return $this->getRedis()->del($keys) > 0;
         } catch (\RedisException) {
             $this->resetRedis();
 
@@ -400,6 +452,26 @@ final class KeyValueSessionBackend implements SessionBackendInterface
         }
     }
 
+    /**
+     * HMAC of a session ID, as persisted in the key and in `ses_id`.
+     *
+     * HashableSessionBackendInterface: core's Backend users module hashes
+     * the viewer's own session ID with this to mark the current session,
+     * and SessionManager uses it to spare the current session when it
+     * invalidates all sessions of a user.
+     *
+     * With `hashSessionIds` off (legacy migrations only) this is the
+     * identity, and the plain session ID is persisted as before.
+     */
+    public function hash(string $sessionId): string
+    {
+        if ($this->hashSessionIds) {
+            return hash_hmac(self::HASH_ALGO, $sessionId, $this->hashSecret);
+        }
+
+        return $sessionId;
+    }
+
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
@@ -411,16 +483,37 @@ final class KeyValueSessionBackend implements SessionBackendInterface
      * operator with read access to the cache could lift any active
      * session by reading the raw key and replaying it as a cookie. The
      * cookie value the user holds is unchanged; only the persistence
-     * key is rewritten. `ses_id` inside the JSON payload still holds
-     * the plain session ID so TYPO3's interface contract stays intact.
+     * key is rewritten. The record's `ses_id` holds the same hash, as in
+     * core's own backends: the interface contract does not require the
+     * plain ID there, and storing it would hand the cookie to anyone who
+     * reads the value or the Backend users module.
      */
     private function key(string $sessionId): string
     {
-        if ($this->hashSessionIds) {
-            return $this->prefix . hash_hmac(self::HASH_ALGO, $sessionId, $this->hashSecret);
-        }
+        return $this->prefix . $this->hash($sessionId);
+    }
 
-        return $this->prefix . $sessionId;
+    /**
+     * Best-effort rewrite of a record whose `ses_id` is not the hash.
+     *
+     * A failure here must not fail the read: the caller already holds a
+     * correct record, and the old one expires with its TTL anyway.
+     *
+     * @param array<array-key, mixed> $record
+     */
+    private function migrateRecord(string $key, string $raw, array $record): void
+    {
+        try {
+            $this->getRedis()->eval(
+                self::MIGRATE_SCRIPT,
+                [$key, $raw, json_encode($record, JSON_THROW_ON_ERROR)],
+                1,
+            );
+        } catch (\RedisException) {
+            $this->resetRedis();
+        } catch (\JsonException) {
+            // Not re-encodable; leave it to expire.
+        }
     }
 
     /**
