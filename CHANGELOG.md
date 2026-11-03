@@ -1,3 +1,9 @@
+## [4.6.17](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.16...v4.6.17) (2026-11-03)
+
+### :bug: Fixes
+
+* **security:** AUD-077 F01+F02 — store the session ID hash, not the cookie ([6986bb2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/6986bb2e1c1ce1019f49c6d57d4ed2b61ab11b3e))
+
 ## [4.6.16](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.15...v4.6.16) (2026-10-30)
 
 ### :repeat: Chores
