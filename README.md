@@ -224,7 +224,7 @@ phpredis 6.x backoff config are configured in exactly one place.
 
 ## Development
 
-Tooling lives in [`moselwal/dev`](../dev). Common commands:
+Tooling lives in [`koh/dev`](https://git.ole-hartwig.eu/ai-ready-platform/platform/dev). Common commands:
 
 ```bash
 composer install

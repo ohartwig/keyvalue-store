@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    executionOrder is "depends,random", not "depends,defects", and that is not
+    executionOrder is "random", not "random,defects", and that is not
     a preference.
 
     Infection rewrites this file into a temporary copy of its own and forces
@@ -19,10 +19,10 @@
     worth reading over a suite with no hidden inter-test dependencies.
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/13.4/phpunit.xsd"
          bootstrap="../vendor/autoload.php"
          cacheDirectory="../.phpunit.cache"
-         executionOrder="depends,random"
+         executionOrder="random"
          resolveDependencies="true"
          beStrictAboutOutputDuringTests="true"
          failOnRisky="true"
