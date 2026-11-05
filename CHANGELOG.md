@@ -1,3 +1,22 @@
+## [4.6.18](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.17...v4.6.18) (2026-11-05)
+
+### :repeat: Continuous Integrations
+
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.61 ([c646c11](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/c646c11a21aab8c5083cd9d29a4a78c5f093a8a1))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.60 ([0186926](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/01869267310101580e1c3042ef648037eb77735f))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.59 ([f8d3b6f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/f8d3b6f22d6d46fca9398e70fb8845a131f7cc86))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.58 ([ec5a103](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/ec5a103e3a32d6972c510696ea316e10daf66a27))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.57 ([0b18320](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/0b1832013c9b4650ec21e4a723bf94cb966f1450))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.56 ([ddbba1e](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/ddbba1e86ebc8432eaf968876ca159c9736cc78b))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.55 ([b1abfa5](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/b1abfa50c7bd0bdf30047a3f1eec941a80cdffa3))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.54 ([bc43757](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/bc437571a56e5a3c7e741b6b56b64adf38327906))
+* run the functional tests against a Valkey service ([9ed5129](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/9ed51291ed9a803235182114149739e6aaea3483))
+* fix link-checker and infection config ([708390c](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/708390ce9b67590b9d48e64725e214b59c528a51))
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([669617c](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/669617cc54361ea153eadeab2632a504ccdae28c))
+
 ## [4.6.17](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.16...v4.6.17) (2026-11-03)
 
 ### :bug: Fixes
