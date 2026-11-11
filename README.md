@@ -139,6 +139,32 @@ Additionally:
   retries empty SCAN pages internally instead of returning `false`
   to the caller (a well-known phpredis 6.x footgun).
 
+### Connection reuse in a FrankenPHP worker (`KEYVALUE_CONNECTION_REUSE`)
+
+Off by default. With `KEYVALUE_CONNECTION_REUSE=1` in a FrankenPHP worker,
+the factory keeps one `\Redis` object per complete option set for the life
+of the worker, and later requests get it back instead of a new one. A request
+then no longer sends `AUTH`, `ECHO` and `SELECT` again for every cache,
+session and lock backend it touches (on the TYPO3 page cache hit of one
+installation: 21 Valkey commands per request down to 9).
+
+- One object per option set: everything the backend passed to `create()`,
+  including TLS, credentials, database, serializer, compression and key
+  prefix. Two option sets that differ in anything never share an object.
+- Dropped and rebuilt when it is not in ATOMIC mode (a request ended inside
+  `MULTI` or a pipeline), when it is on another database than its options
+  say, when the server reported an error on it, or when a backend saw a
+  connection error on it. Client options a backend set after `create()`
+  (serializer, prefix, SCAN mode, ...) are put back before it is handed out.
+- A connection the server closed meanwhile reconnects on its next command
+  (phpredis applies `AUTH` and `SELECT` again from its configuration).
+- Never kept: Sentinel option sets (the master is resolved on every
+  `create()`), option sets without `lazy`, and anything outside a FrankenPHP
+  worker (`$_SERVER['FRANKENPHP_WORKER']`).
+
+The switch is read from `$_SERVER`, `$_ENV` or the process environment, so it
+can be set in the worker's `env` lines or in the container.
+
 ### Bench (real, container-side against Valkey/mTLS, phpredis 6.3.0)
 
 | Operation | Core / v4.0.x | v4.3.0 | Δ |

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Moselwal\KeyValueStore\Session\Backend;
 
 use Moselwal\KeyValueStore\Connection\ConnectionFactoryInterface;
+use Moselwal\KeyValueStore\Connection\ConnectionReuse;
 use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use Redis;
 // TYPO3 11-13 has this exception; TYPO3 14 removed it.
@@ -559,6 +560,10 @@ final class KeyValueSessionBackend implements SessionBackendInterface, HashableS
      */
     private function resetRedis(): void
     {
+        // Every caller saw a RedisException on it: not for another request.
+        if ($this->redis instanceof \Redis) {
+            ConnectionReuse::forget($this->redis);
+        }
         $this->redis = null;
     }
 

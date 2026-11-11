@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Moselwal\KeyValueStore\Cache\Backend;
 
 use Moselwal\KeyValueStore\Connection\ConnectionFactoryInterface;
+use Moselwal\KeyValueStore\Connection\ConnectionReuse;
 use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use TYPO3\CMS\Core\Cache\Backend\RedisBackend;
 use TYPO3\CMS\Core\Cache\Exception;
@@ -181,6 +182,10 @@ final class KeyValueBackend extends RedisBackend
             $this->applySerializerOption();
             $this->connected = true;
         } catch (\RedisException|\InvalidArgumentException $e) {
+            // Typed and uninitialised until create() returned.
+            if (isset($this->redis)) {
+                ConnectionReuse::forget($this->redis);
+            }
             $this->connected = false;
             throw new Exception('KeyValueBackend could not connect to Redis: ' . $e->getMessage(), 1700100001, $e);
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Moselwal\KeyValueStore\Locking;
 
+use Moselwal\KeyValueStore\Connection\ConnectionReuse;
 use Moselwal\KeyValueStore\Connection\KeyValueConnectionFactory;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -150,6 +151,7 @@ final class KeyValueLockingStrategy implements LockingStrategyInterface, LoggerA
             return (bool) $this->redis->set($this->name, $this->value, ['NX', 'EX' => $this->ttl]);
         } catch (\Throwable $e) {
             $this->logger?->critical('Could not acquire lock in Redis', ['exception' => $e]);
+            ConnectionReuse::forget($this->redis);
 
             return false;
         }
@@ -172,6 +174,7 @@ final class KeyValueLockingStrategy implements LockingStrategyInterface, LoggerA
             return $result[1] ?? null;
         } catch (\Throwable $e) {
             $this->logger?->critical('Failure while waiting on Redis mutex', ['exception' => $e]);
+            ConnectionReuse::forget($this->redis);
 
             return null;
         }
@@ -196,6 +199,7 @@ final class KeyValueLockingStrategy implements LockingStrategyInterface, LoggerA
             return (bool) $this->redis->eval($script, [$this->name, $this->mutexName, $this->value, $this->ttl], 2);
         } catch (\Throwable $e) {
             $this->logger?->critical('Failure while unlocking in Redis', ['exception' => $e]);
+            ConnectionReuse::forget($this->redis);
 
             return false;
         }

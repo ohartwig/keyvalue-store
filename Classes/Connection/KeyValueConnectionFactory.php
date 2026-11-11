@@ -62,6 +62,16 @@ final class KeyValueConnectionFactory implements ConnectionFactoryInterface
      */
     public function create(array $options): \Redis
     {
+        // KEYVALUE_CONNECTION_REUSE: the object an earlier request of this
+        // worker built for exactly these options, see ConnectionReuse.
+        $reuseKey = ConnectionReuse::key($options);
+        if (null !== $reuseKey) {
+            $kept = ConnectionReuse::take($reuseKey);
+            if (null !== $kept) {
+                return $kept;
+            }
+        }
+
         $params = ConnectionParams::fromOptions($options);
         $tlsContext = $this->tlsContextBuilder->build($options);
         $endpoint = $this->resolveEndpoint($options, $params->connectTimeout);
@@ -73,6 +83,9 @@ final class KeyValueConnectionFactory implements ConnectionFactoryInterface
             // Force an immediate connection and surface any connectivity or auth errors.
             // phpredis applies AUTH and SELECT automatically before executing ping().
             $redis->ping();
+        }
+        if (null !== $reuseKey) {
+            ConnectionReuse::keep($reuseKey, $redis, $params->database);
         }
 
         return $redis;
