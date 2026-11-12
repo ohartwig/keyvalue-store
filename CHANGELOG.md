@@ -1,3 +1,20 @@
+## [4.7.1](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.7.0...v4.7.1) (2026-11-12)
+
+### :repeat: Continuous Integrations
+
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.108 ([0f5362e](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/0f5362ed1ab1342159600fc02235a56419064b91))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.107 ([a5b8fbd](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/a5b8fbdf0768b12efbf6f0bbf556b401ed71efc2))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.106 ([e3299f0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/e3299f0628178e001adb6be0d534a41ba888f700))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.105 ([b55c32c](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/b55c32c251149953c51675e749bd2977c761321b))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.104 ([017cfe3](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/017cfe3d3784ffe24a916ffe0d3f4c2f7d5d5917))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.103 ([0436850](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/04368501343aa8896fffb8b988bba4faa72b22cc))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.102 ([6c8bf3f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/6c8bf3fa28f262b203a2b80fbc8ee9ed268f16d7))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.101 ([9ccdc08](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/9ccdc088d3fe0692cd859610a54dff29a6f9cd6a))
+
+### :repeat: Chores
+
+* **deps:** update dependency ergebnis/composer-normalize to ^2.56.1 ([1ec1f26](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/1ec1f26deb1bbcbbdedc99efe4a9ef821e045a3d))
+
 ## [4.7.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.6.18...v4.7.0) (2026-11-11)
 
 ### :sparkles: Features
