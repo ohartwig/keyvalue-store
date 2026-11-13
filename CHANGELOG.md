@@ -1,3 +1,17 @@
+## [4.7.2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.7.1...v4.7.2) (2026-11-13)
+
+### :fast_forward: Performance
+
+* **cache:** flushByTag(s) and remove() as one server-side script each ([54fda65](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/54fda65e54dfbf30a6d8499ec0b26fbcd83b1699))
+
+### :repeat: Continuous Integrations
+
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.114 ([98c2cae](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/98c2caebfd15846bdcc7c013680b7087cd3e8e7f))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.113 ([335d2e9](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/335d2e92f04e7e8ace3de1870d82cb9157e8d100))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.112 ([e4e8d77](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/e4e8d77a62588b9cbf97485acea562ee1c19f62f))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.111 ([ba06a07](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/ba06a0716a3d7e36c6faa77d3d5d9b04af710299))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.110 ([09de991](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/09de991cdd938bc389c1f8b3faffaf1b51a13efc))
+
 ## [4.7.1](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.7.0...v4.7.1) (2026-11-12)
 
 ### :repeat: Continuous Integrations
