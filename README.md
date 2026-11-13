@@ -117,7 +117,8 @@ $GLOBALS['TYPO3_CONF_VARS']['SYS']['locking']['strategies'][
 
 The `KeyValueBackend` extends `RedisBackend` and overrides the
 operations below to drop server-side anti-patterns and round trips.
-`get`, `has` and `findIdentifiersByTag` are inherited from Core.
+`get`, `has` and `findIdentifiersByTag` are inherited from Core;
+conditional reads are an addition next to `get` (see below).
 
 | Operation | TYPO3 Core | `KeyValueBackend` (v4.3.0) |
 |---|---|---|
@@ -126,6 +127,7 @@ operations below to drop server-side anti-patterns and round trips.
 | `flushByTag()` / `flushByTags()` | N× sequential `flushByTag()` fan-out, `SDIFFSTORE` per related tag | One Lua `EVAL`: atomic, `SREM` instead of `SDIFFSTORE`; above 1,000 entries the batched three-round-trip path |
 | `remove()` | `EXISTS` + `SMEMBERS` + pipeline (3 round trips) | One Lua `EVAL`; also clears a leftover tag index of an expired entry |
 | `collectGarbage()` | `KEYS identTags:*` | `SCAN`-loop |
+| Read of an entry the reader already holds | `GET` of the whole value | `getUnlessUnchanged()`: one Lua `EVAL` that compares length and closing bytes on the server and sends the value only if it changed |
 | Connection | `pconnect()` only, no Sentinel/TLS | `KeyValueConnectionFactory` (Sentinel resolver, mTLS, backoff) |
 | Serializer | hard-coded PHP-native | configurable: `php` / `igbinary` / `none` / `auto` |
 
@@ -211,6 +213,67 @@ One script blocks the server for its whole run, so a flush of more than
 path, as does a script error. Like `set()`, the scripts build key names
 inside Lua and therefore target a standalone Valkey/Redis or a
 Sentinel-managed primary, not Redis Cluster.
+
+#### Conditional reads (`ConditionalReadBackendInterface`)
+
+For a reader that keeps a verified copy of an entry in memory and only needs
+to know whether that copy is still what the server holds. `koh/frankenphp`'s
+worker cache memo is such a reader: it used to fetch the whole payload on
+every `get()` only to compare it byte for byte with its copy.
+
+```php
+$read = $backend->getWithValidator('menu');           // payload as get() returns it, plus a validator
+// ... keep $read->payload and $read->validator ...
+$next = $backend->getUnlessUnchanged('menu', $read->validator);
+// null: the server still stores those bytes. Otherwise the current payload
+// (false when the entry is gone) and its new validator, from the same call.
+```
+
+The server is asked on every read, in one round trip either way (one script:
+`STRLEN`, `GETRANGE` of the closing bytes, and `GET` only on a difference), so
+a write, flush or expiry on any pod is seen on the next read, as with `get()`.
+
+**What a validator is.** The length of the stored value and its last bytes,
+opaque to the reader. TYPO3 14's `VariableFrontend` ends every payload in the
+96 hex digits of an HMAC-SHA3-384 over everything before them
+(`AuthenticatedMessageDeserializer`, `HashService::appendHmac()`), so two
+different payloads differ in their closing bytes as surely as their HMACs
+differ. That is the whole argument, and it only holds for such payloads: use
+a validator only for a payload whose HMAC you have checked.
+
+**Compression.** With the `compression` option the server holds a zlib
+stream, not the payload, so the validator is taken from the stored bytes
+before decompression: their length and their last 200 bytes. A zlib stream
+ends in the deflate coding of the payload's end (the HMAC digits, at most
+16 bits each) and the Adler-32 of the whole payload, so those bytes still
+cover the complete HMAC. The same payload compressed at another level is
+different stored bytes: it is fetched once and gets a new validator.
+
+**What it does not change.** A conditional read never returns bytes; the
+reader answers from the copy it verified. Someone with write access to the
+server can store other bytes with the length and closing bytes of a payload a
+reader verified, and that reader then keeps answering with its verified copy;
+storing the old, validly signed payload again does the same to any reader.
+
+**When there is no validator.** `getWithValidator()` returns `null` as
+validator, and `getUnlessUnchanged()` is a plain read, when the entry is
+missing or empty, when phpredis serialises values itself (`serializer`
+option: the stored bytes are then not what a script returns), and after a
+conditional read failed as a script (scripting forbidden for the user, for
+one) on that backend instance.
+
+Measured 2026-11-13 in the production PHP image (8.5.12, phpredis 6.3.0)
+against Valkey 9.1.3 over mTLS; medians of the backend read alone:
+
+| Entry | `GET` | conditional read, unchanged | Δ |
+|---|---:|---:|---|
+| 2.2 MB | 2,270 µs | 70 µs | **32×** |
+| 120 kB | 165 µs | 71 µs | 2.3× |
+| 30 kB | 100 µs | 70 µs | 1.4× |
+| up to 2 kB | 70 µs | 70 µs | none |
+
+Below some 16 kB the round trip is the whole cost, so a reader gains nothing
+there; `koh/frankenphp` uses conditional reads from that size on.
 
 The `flush()` and `collectGarbage()` overrides are intentionally
 slower wallclock-wise for the caller. The trade-off is server-side
