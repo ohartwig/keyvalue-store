@@ -105,6 +105,93 @@ final class KeyValueBackend extends RedisBackend
         LUA;
 
     /**
+     * flushByTags() in one round trip and atomically, on the server.
+     *
+     * The released path took three round trips (SUNION of the tags, SUNION
+     * of the entries' tag sets, then a pipeline) and pruned every other tag
+     * set an entry belonged to with SDIFFSTORE, which is O(size of that set):
+     * a flush of ten entries that also carry a tag of 20,000 members kept the
+     * single-threaded server busy for 3.7 ms. And a set() landing between the
+     * first and the last round trip survived the flush with its tag set
+     * already gone, so a second flush of the same tag no longer found it.
+     *
+     * This script takes each flushed entry out of its other tag sets with
+     * SREM (O(members removed)), unlinks the entries, their tag sets and the
+     * flushed tags' sets, and does all of it without another client in
+     * between. It refuses (returns -1, nothing changed) above ARGV[4]
+     * entries: one script blocks the server for its whole run, so a very
+     * large flush keeps the released, spread-out path.
+     *
+     * - KEYS[1..N] = the flushed tags' tag→identifier sets
+     * - ARGV[1] = data key prefix     (keyPrefix + 'identData:')
+     * - ARGV[2] = entry→tags prefix   (keyPrefix + 'identTags:')
+     * - ARGV[3] = tag→entries prefix  (keyPrefix + 'tagIdents:')
+     * - ARGV[4] = most entries to flush in the script
+     * - ARGV[5..] = the flushed tag names
+     *
+     * Commands take at most 1000 arguments at a time (Lua's unpack() limit
+     * is far above, the batching keeps each command's argument list bounded).
+     */
+    private const FLUSH_TAGS_SCRIPT = <<<'LUA'
+        local dataPrefix, identTagsPrefix, tagPrefix = ARGV[1], ARGV[2], ARGV[3]
+        local limit = tonumber(ARGV[4])
+        local flushed = {}
+        for i = 5, #ARGV do flushed[ARGV[i]] = true end
+        local ids = redis.call('SUNION', unpack(KEYS))
+        if #ids > limit then return -1 end
+        local perTag = {}
+        local del = {}
+        for _, id in ipairs(ids) do
+            local tags = redis.call('SMEMBERS', identTagsPrefix .. id)
+            for _, tag in ipairs(tags) do
+                if not flushed[tag] then
+                    local list = perTag[tag]
+                    if not list then list = {}; perTag[tag] = list end
+                    list[#list + 1] = id
+                end
+            end
+            del[#del + 1] = dataPrefix .. id
+            del[#del + 1] = identTagsPrefix .. id
+        end
+        for tag, list in pairs(perTag) do
+            for i = 1, #list, 1000 do
+                redis.call('SREM', tagPrefix .. tag, unpack(list, i, math.min(i + 999, #list)))
+            end
+        end
+        for i = 1, #del, 1000 do
+            redis.call('UNLINK', unpack(del, i, math.min(i + 999, #del)))
+        end
+        redis.call('UNLINK', unpack(KEYS))
+        return #ids
+        LUA;
+
+    /** Entries one flush script may take; above, the released path runs. */
+    private const FLUSH_SCRIPT_MAX_ENTRIES = 1000;
+
+    /** Tags one flush script may take (each is one KEYS argument). */
+    private const FLUSH_SCRIPT_MAX_TAGS = 1000;
+
+    /**
+     * remove() in one round trip: whether the entry existed, its relations
+     * taken out of its tag sets, data and entry→tags set unlinked. Core's
+     * remove() is EXISTS + SMEMBERS + a pipeline, three round trips.
+     *
+     * Unlike core it also clears a leftover entry→tags set whose data key had
+     * already expired; the return value is the same: whether the data key
+     * existed.
+     *
+     * - KEYS[1] = data key, KEYS[2] = entry→tags set
+     * - ARGV[1] = entry identifier, ARGV[2] = tag→entries prefix
+     */
+    private const REMOVE_SCRIPT = <<<'LUA'
+        local existed = redis.call('EXISTS', KEYS[1])
+        local tags = redis.call('SMEMBERS', KEYS[2])
+        for _, tag in ipairs(tags) do redis.call('SREM', ARGV[2] .. tag, ARGV[1]) end
+        redis.call('UNLINK', KEYS[1], KEYS[2])
+        return existed
+        LUA;
+
+    /**
      * TYPO3 14 constructor: CacheManager passes the options array directly.
      * Earlier TYPO3 versions are no longer supported (composer.json: ^14.0).
      *
@@ -360,6 +447,28 @@ final class KeyValueBackend extends RedisBackend
             return;
         }
         $tagIdentifiers = array_map($this->getTagIdentifier(...), $tags);
+        if (\count($tagIdentifiers) <= self::FLUSH_SCRIPT_MAX_TAGS) {
+            $flushed = $this->redis->eval(
+                self::FLUSH_TAGS_SCRIPT,
+                array_merge(
+                    $tagIdentifiers,
+                    [
+                        $this->keyPrefix . self::IDENTIFIER_DATA_PREFIX,
+                        $this->keyPrefix . self::IDENTIFIER_TAGS_PREFIX,
+                        $this->keyPrefix . self::TAG_IDENTIFIERS_PREFIX,
+                        self::FLUSH_SCRIPT_MAX_ENTRIES,
+                    ],
+                    array_values($tags),
+                ),
+                \count($tagIdentifiers),
+            );
+            // An int >= 0 is done. -1 (too many entries for one script) and a
+            // script error (false) leave everything as it was: take the
+            // released path below.
+            if (\is_int($flushed) && $flushed >= 0) {
+                return;
+            }
+        }
         $identifierSets = $this->redis->sUnion(...$tagIdentifiers);
         if (!is_array($identifierSets) || [] === $identifierSets) {
             // No entries reference these tags — only the tag sets need
@@ -369,6 +478,33 @@ final class KeyValueBackend extends RedisBackend
             return;
         }
         $this->removeIdentifierEntriesAndRelationsBatched($identifierSets, $tags);
+    }
+
+    /**
+     * One script instead of core's EXISTS + SMEMBERS + pipeline (see
+     * REMOVE_SCRIPT). Returns whether the entry existed, as core does.
+     */
+    public function remove(string $entryIdentifier): bool
+    {
+        if (!$this->connected) {
+            return false;
+        }
+        $existed = $this->redis->eval(
+            self::REMOVE_SCRIPT,
+            [
+                $this->getDataIdentifier($entryIdentifier),
+                $this->getTagsIdentifier($entryIdentifier),
+                $entryIdentifier,
+                $this->keyPrefix . self::TAG_IDENTIFIERS_PREFIX,
+            ],
+            2,
+        );
+        if (false === $existed) {
+            // Script error: the core path, which needs no scripting.
+            return parent::remove($entryIdentifier);
+        }
+
+        return 1 === $existed;
     }
 
     /**
