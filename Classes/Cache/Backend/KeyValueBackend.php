@@ -46,7 +46,7 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  *       ],
  *   ],
  */
-final class KeyValueBackend extends RedisBackend
+final class KeyValueBackend extends RedisBackend implements ConditionalReadBackendInterface
 {
     private ConnectionFactoryInterface $factory;
 
@@ -190,6 +190,48 @@ final class KeyValueBackend extends RedisBackend
         redis.call('UNLINK', KEYS[1], KEYS[2])
         return existed
         LUA;
+
+    /**
+     * getUnlessUnchanged() in one round trip: 1 when the stored value has the
+     * length and the closing bytes the reader's validator names, otherwise
+     * the value itself, or 0 when there is none. One script, so the answer
+     * describes one moment, and a changed entry costs no second round trip.
+     *
+     * Never returns nil: phpredis reports a script error as false, and that
+     * must not read as "no entry".
+     *
+     * - KEYS[1] = data key
+     * - ARGV[1] = stored length, ARGV[2] = the last bytes of the stored value
+     */
+    private const UNLESS_UNCHANGED_SCRIPT = <<<'LUA'
+        local length = redis.call('STRLEN', KEYS[1])
+        if length > 0 and length == tonumber(ARGV[1])
+            and redis.call('GETRANGE', KEYS[1], -#ARGV[2], -1) == ARGV[2] then
+            return 1
+        end
+        local value = redis.call('GET', KEYS[1])
+        if value then return value end
+        return 0
+        LUA;
+
+    /**
+     * Closing bytes of the stored value a validator carries. TYPO3 14's
+     * VariableFrontend ends every payload in the 96 hex digits of an
+     * HMAC-SHA3-384 over everything before them, so for an uncompressed
+     * cache these bytes are that HMAC.
+     */
+    private const VALIDATOR_TAIL_BYTES = 96;
+
+    /**
+     * The same for a cache with `compression`: the stored value is a zlib
+     * stream, which ends in the deflate coding of the payload's end and the
+     * Adler-32 of the whole payload. Deflate spends at most 16 bits on a
+     * digit, so 200 bytes always reach back over the whole coded HMAC.
+     */
+    private const VALIDATOR_TAIL_BYTES_COMPRESSED = 200;
+
+    /** Set once a conditional read failed as a script: this instance stops offering them. */
+    private bool $conditionalReadFailed = false;
 
     /**
      * TYPO3 14 constructor: CacheManager passes the options array directly.
@@ -550,6 +592,92 @@ final class KeyValueBackend extends RedisBackend
             }
             $queue->exec();
         }
+    }
+
+    /**
+     * get() with a validator for the stored bytes (see
+     * {@see ConditionalReadBackendInterface}): their length and their last
+     * bytes, taken before decompression, so it names what the server holds.
+     *
+     * That pair identifies a payload only if the payload ends in a MAC over
+     * everything before it, as TYPO3 14's VariableFrontend writes it: two
+     * different payloads then differ in their closing bytes. A reader may
+     * use the validator only for payloads whose MAC it has checked.
+     *
+     * No validator (and the plain get()) when phpredis serialises values
+     * itself (`serializer` option), since the stored bytes are then not what
+     * a script returns, and after a conditional read failed as a script.
+     */
+    public function getWithValidator(string $entryIdentifier): ConditionalRead
+    {
+        if (!$this->offersConditionalReads()) {
+            return new ConditionalRead($this->get($entryIdentifier), null);
+        }
+
+        return $this->conditionalRead($this->redis->get($this->getDataIdentifier($entryIdentifier)));
+    }
+
+    /**
+     * One script: unchanged (null), or the current entry. A validator this
+     * backend did not issue, and a script error, end in a full read.
+     */
+    public function getUnlessUnchanged(string $entryIdentifier, string $validator): ?ConditionalRead
+    {
+        $separator = strpos($validator, ':');
+        if (
+            !$this->offersConditionalReads()
+            || false === $separator
+            || 1 !== preg_match('/^[1-9][0-9]*$/D', substr($validator, 0, $separator))
+            || '' === substr($validator, $separator + 1)
+        ) {
+            return $this->getWithValidator($entryIdentifier);
+        }
+        $reply = $this->redis->eval(
+            self::UNLESS_UNCHANGED_SCRIPT,
+            [
+                $this->getDataIdentifier($entryIdentifier),
+                substr($validator, 0, $separator),
+                substr($validator, $separator + 1),
+            ],
+            1,
+        );
+        if (1 === $reply) {
+            return null;
+        }
+        if (0 === $reply) {
+            return new ConditionalRead(false, null);
+        }
+        if (!\is_string($reply)) {
+            // Script error (scripting forbidden for this user, for one): the
+            // plain read, and no further attempts on this instance.
+            $this->conditionalReadFailed = true;
+
+            return $this->getWithValidator($entryIdentifier);
+        }
+
+        return $this->conditionalRead($reply);
+    }
+
+    private function offersConditionalReads(): bool
+    {
+        return $this->connected
+            && !$this->conditionalReadFailed
+            && \Redis::SERIALIZER_NONE === $this->redis->getOption(\Redis::OPT_SERIALIZER);
+    }
+
+    /**
+     * The payload as core's get() returns it for these stored bytes, and
+     * their validator.
+     */
+    private function conditionalRead(mixed $stored): ConditionalRead
+    {
+        if (!\is_string($stored) || '' === $stored) {
+            return new ConditionalRead($stored, null);
+        }
+        $tailBytes = $this->compression ? self::VALIDATOR_TAIL_BYTES_COMPRESSED : self::VALIDATOR_TAIL_BYTES;
+        $validator = \strlen($stored) . ':' . substr($stored, -$tailBytes);
+
+        return new ConditionalRead($this->compression ? gzuncompress($stored) : $stored, $validator);
     }
 
     /**
