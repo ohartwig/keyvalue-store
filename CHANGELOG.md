@@ -1,3 +1,9 @@
+## [4.8.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.7.2...v4.8.0) (2026-11-13)
+
+### :sparkles: Features
+
+* **cache:** conditional read for entries a reader already holds ([15f0204](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/15f02049c21a96cba0ee9e46829612b32e97cb1a))
+
 ## [4.7.2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.7.1...v4.7.2) (2026-11-13)
 
 ### :fast_forward: Performance
