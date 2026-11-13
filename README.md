@@ -115,17 +115,16 @@ $GLOBALS['TYPO3_CONF_VARS']['SYS']['locking']['strategies'][
 
 ## What v4.x does differently from TYPO3 Core's `RedisBackend`
 
-The `KeyValueBackend` extends `RedisBackend` and overrides four
-operations to drop server-side anti-patterns. The other operations
-(`get`, `set`, `has`, `remove`, `findIdentifiersByTag`) are inherited
-verbatim — Core already pipelines tag tracking there, so there is
-nothing to add.
+The `KeyValueBackend` extends `RedisBackend` and overrides the
+operations below to drop server-side anti-patterns and round trips.
+`get`, `has` and `findIdentifiersByTag` are inherited from Core.
 
 | Operation | TYPO3 Core | `KeyValueBackend` (v4.3.0) |
 |---|---|---|
 | `set()` | SETEX + SMEMBERS + (optional MULTI/PIPELINE) tag diff | Single Lua `EVAL` (atomic, 1 roundtrip) |
 | `flush()` | `KEYS prefix*` + `DEL` (event-loop block for all clients) | `SCAN` + `UNLINK` batches (server stays responsive) |
-| `flushByTag()` / `flushByTags()` | N× sequential `flushByTag()` fan-out | One `sUnion` + one pipelined `UNLINK` |
+| `flushByTag()` / `flushByTags()` | N× sequential `flushByTag()` fan-out, `SDIFFSTORE` per related tag | One Lua `EVAL`: atomic, `SREM` instead of `SDIFFSTORE`; above 1,000 entries the batched three-round-trip path |
+| `remove()` | `EXISTS` + `SMEMBERS` + pipeline (3 round trips) | One Lua `EVAL`; also clears a leftover tag index of an expired entry |
 | `collectGarbage()` | `KEYS identTags:*` | `SCAN`-loop |
 | Connection | `pconnect()` only, no Sentinel/TLS | `KeyValueConnectionFactory` (Sentinel resolver, mTLS, backoff) |
 | Serializer | hard-coded PHP-native | configurable: `php` / `igbinary` / `none` / `auto` |
@@ -180,6 +179,38 @@ can be set in the worker's `env` lines or in the container.
 | `flushByTags(10 tags)` | 4.1 ms | 1.2 ms | **3.3×** |
 | `flush(10 k keys)` | 7.4 ms | 9.5 ms | −30 % wallclock, no event-loop block |
 | `collectGarbage(5 k keys)` | 1.4 ms | 2.8 ms | −50 % wallclock, no event-loop block |
+
+#### `flushByTag(s)` and `remove()` as server-side scripts
+
+Measured 2026-11-13 in the production PHP image (8.5.12, phpredis 6.3.0)
+against Valkey 9.1.3 over mTLS; medians. "Before" is the batched
+three-round-trip path of v4.3.0 to v4.7.
+
+| Operation | Before | Script | Δ |
+|---|---:|---:|---|
+| `flushByTag()`, 10 entries that also carry a 1,000-member tag | 427 µs | 67 µs | **6.4×** |
+| `flushByTag()`, 10 entries that also carry a 20,000-member tag | 4,761 µs | 104 µs | **46×** |
+| `flushByTags(100 tags)`, 20,000-member shared tag | 16.2 ms | 0.54 ms | **30×** |
+| `flushByTag()` of a tag without entries | 93 µs | 40 µs | 2.3× |
+| `remove()`, 3 tags | 210 µs | 78 µs | 2.7× |
+
+Why it matters beyond the caller: the old path pruned every other tag an
+entry carried with `SDIFFSTORE`, which is O(size of that tag set). A tag that
+nearly every entry carries (a cache namespace tag, a site-wide tag) made each
+small flush rewrite that whole set — in the 20,000-member case one
+`SDIFFSTORE` held the single-threaded server for 3.7 ms. The script removes
+only the flushed members with `SREM`.
+
+It also closes a race: a `set()` that landed between the old path's first and
+last round trip survived the flush with its tag index already deleted, so a
+second flush of the same tag no longer found it. One script runs without
+another client in between.
+
+One script blocks the server for its whole run, so a flush of more than
+1,000 entries (or more than 1,000 tags at once) keeps the old, spread-out
+path, as does a script error. Like `set()`, the scripts build key names
+inside Lua and therefore target a standalone Valkey/Redis or a
+Sentinel-managed primary, not Redis Cluster.
 
 The `flush()` and `collectGarbage()` overrides are intentionally
 slower wallclock-wise for the caller. The trade-off is server-side
