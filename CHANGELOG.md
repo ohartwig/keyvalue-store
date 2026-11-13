@@ -1,3 +1,9 @@
+## [4.9.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.8.0...v4.9.0) (2026-11-13)
+
+### :sparkles: Features
+
+* **cache:** generations next to the entries, set() and generation write as one script ([ca46435](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/ca46435e290ecff646ea15e93057d0824e68f159))
+
 ## [4.8.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.7.2...v4.8.0) (2026-11-13)
 
 ### :sparkles: Features
