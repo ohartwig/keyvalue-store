@@ -46,7 +46,7 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  *       ],
  *   ],
  */
-final class KeyValueBackend extends RedisBackend implements ConditionalReadBackendInterface
+final class KeyValueBackend extends RedisBackend implements ConditionalReadBackendInterface, GenerationBackendInterface
 {
     private ConnectionFactoryInterface $factory;
 
@@ -232,6 +232,114 @@ final class KeyValueBackend extends RedisBackend implements ConditionalReadBacke
 
     /** Set once a conditional read failed as a script: this instance stops offering them. */
     private bool $conditionalReadFailed = false;
+
+    /**
+     * set() and a generation write as one step (see
+     * {@see GenerationBackendInterface::setWithGeneration()}).
+     *
+     * The entry part is SET_TAG_DIFF_SCRIPT with the tags moved two
+     * arguments back. The generation is written before the entry: should the
+     * server abort the script half-way (out of memory at a later command),
+     * a generation that moved without its entry only costs readers a
+     * refill, whereas an entry that changed under an unchanged generation
+     * would be served stale.
+     *
+     * - KEYS[1] = data key, KEYS[2] = entry→tags set
+     * - KEYS[3] = generation key
+     * - KEYS[4] = guard entry's data key (optional)
+     * - ARGV[1] = TTL in seconds (> 0), ARGV[2] = payload
+     * - ARGV[3] = entry identifier, ARGV[4] = tag→entries prefix
+     * - ARGV[5] = new generation, ARGV[6] = in-flight marker prefix
+     * - ARGV[7..N] = new tag names
+     *
+     * Returns {guard entry exists, generation written, stored generation}.
+     */
+    private const SET_WITH_GENERATION_SCRIPT = <<<'LUA'
+        local current = redis.call('GET', KEYS[3])
+        if KEYS[4] and redis.call('EXISTS', KEYS[4]) == 1 then
+            return {1, 0, current}
+        end
+        local written = 0
+        if not current or string.sub(current, 1, #ARGV[6]) ~= ARGV[6] then
+            redis.call('SET', KEYS[3], ARGV[5])
+            written = 1
+            current = ARGV[5]
+        end
+        redis.call('SETEX', KEYS[1], ARGV[1], ARGV[2])
+        local existing = redis.call('SMEMBERS', KEYS[2])
+        local newSet = {}
+        for i = 7, #ARGV do newSet[ARGV[i]] = true end
+        local existingSet = {}
+        for _, tag in ipairs(existing) do
+            existingSet[tag] = true
+            if not newSet[tag] then
+                redis.call('SREM', KEYS[2], tag)
+                redis.call('SREM', ARGV[4] .. tag, ARGV[3])
+            end
+        end
+        for tag, _ in pairs(newSet) do
+            if not existingSet[tag] then
+                redis.call('SADD', KEYS[2], tag)
+                redis.call('SADD', ARGV[4] .. tag, ARGV[3])
+            end
+        end
+        return {0, written, current}
+        LUA;
+
+    /**
+     * Reads a generation and, in the same round trip, whether the guard
+     * entry exists.
+     *
+     * - KEYS[1] = generation key, KEYS[2] = guard entry's data key (optional)
+     *
+     * Returns {guard entry exists, 0, stored generation}.
+     */
+    private const GENERATION_READ_SCRIPT = <<<'LUA'
+        local guard = 0
+        if KEYS[2] then guard = redis.call('EXISTS', KEYS[2]) end
+        return {guard, 0, redis.call('GET', KEYS[1])}
+        LUA;
+
+    /**
+     * Writes a generation: unconditionally (ARGV[2] empty), or unless an
+     * in-flight marker other than ARGV[2] is stored.
+     *
+     * - KEYS[1] = generation key, KEYS[2] = guard entry's data key (optional)
+     * - ARGV[1] = new generation
+     * - ARGV[2] = the caller's own in-flight marker, or ''
+     * - ARGV[3] = in-flight marker prefix
+     *
+     * Returns {guard entry exists, generation written, stored generation}.
+     */
+    private const GENERATION_WRITE_SCRIPT = <<<'LUA'
+        local guard = 0
+        if KEYS[2] then guard = redis.call('EXISTS', KEYS[2]) end
+        if ARGV[2] ~= '' then
+            local current = redis.call('GET', KEYS[1])
+            if current and current ~= ARGV[2] and string.sub(current, 1, #ARGV[3]) == ARGV[3] then
+                return {guard, 0, current}
+            end
+        end
+        redis.call('SET', KEYS[1], ARGV[1])
+        return {guard, 1, ARGV[1]}
+        LUA;
+
+    /**
+     * Key prefix of generation values: `<keyPrefix>generation:<name>`. Next
+     * to core's `identData:`, `identTags:` and `tagIdents:`, and like them
+     * under the key prefix, so that flush() takes it along.
+     */
+    private const GENERATION_PREFIX = 'generation:';
+
+    /**
+     * The generation write the next set() carries, while
+     * setWithGeneration() runs its closure.
+     *
+     * @var array{key: string, guardKey: string|null, generation: string}|null
+     */
+    private ?array $pendingGeneration = null;
+
+    private ?GenerationResult $pendingGenerationResult = null;
 
     /**
      * TYPO3 14 constructor: CacheManager passes the options array directly.
@@ -430,6 +538,15 @@ final class KeyValueBackend extends RedisBackend implements ConditionalReadBacke
             $data = gzcompress($data, $this->compressionLevel);
         }
         $expiration = 0 === $lifetime ? self::FAKED_UNLIMITED_LIFETIME : $lifetime;
+        if (null !== $this->pendingGeneration) {
+            if (!\is_string($data)) {
+                // Nothing was sent: neither entry nor generation.
+                throw new Exception('KeyValueBackend could not compress the entry.', 1700100018);
+            }
+            $this->setCarryingGeneration($entryIdentifier, $data, $tags, $expiration);
+
+            return;
+        }
 
         // Build a fully-prefixed tag-key prefix so Lua can synthesise the
         // tag→identifier set keys (keyPrefix + 'tagIdents:' + tagname)
@@ -591,6 +708,149 @@ final class KeyValueBackend extends RedisBackend implements ConditionalReadBacke
                 $queue->srem($this->getTagIdentifier($tag), $identifier);
             }
             $queue->exec();
+        }
+    }
+
+    public function readGeneration(string $name, ?string $guardEntryIdentifier = null): GenerationResult
+    {
+        return $this->runGenerationScript(
+            self::GENERATION_READ_SCRIPT,
+            $this->generationKeys($name, $guardEntryIdentifier),
+            [],
+        );
+    }
+
+    public function writeGeneration(string $name, string $generation, ?string $guardEntryIdentifier = null): GenerationResult
+    {
+        if ('' === $generation) {
+            throw new \InvalidArgumentException('A generation must not be empty.', 1700100010);
+        }
+
+        return $this->runGenerationScript(
+            self::GENERATION_WRITE_SCRIPT,
+            $this->generationKeys($name, $guardEntryIdentifier),
+            [$generation, '', self::DIRTY_PREFIX],
+        );
+    }
+
+    public function publishGeneration(string $name, string $generation, string $ownMarker, ?string $guardEntryIdentifier = null): GenerationResult
+    {
+        self::assertCleanGeneration($generation);
+        if ('' === $ownMarker) {
+            throw new \InvalidArgumentException('publishGeneration() needs the marker its caller wrote.', 1700100011);
+        }
+
+        return $this->runGenerationScript(
+            self::GENERATION_WRITE_SCRIPT,
+            $this->generationKeys($name, $guardEntryIdentifier),
+            [$generation, $ownMarker, self::DIRTY_PREFIX],
+        );
+    }
+
+    public function setWithGeneration(string $name, string $generation, \Closure $write, ?string $guardEntryIdentifier = null): GenerationResult
+    {
+        self::assertCleanGeneration($generation);
+        $keys = $this->generationKeys($name, $guardEntryIdentifier);
+        if (!$this->connected) {
+            // set() would return without a word and the closure would look
+            // like it never called it.
+            throw new Exception('KeyValueBackend is not connected; generations need the server.', 1700100014);
+        }
+        if (null !== $this->pendingGeneration) {
+            throw new \LogicException('setWithGeneration() cannot be nested.', 1700100012);
+        }
+        $this->pendingGeneration = ['key' => $keys[0], 'guardKey' => $keys[1] ?? null, 'generation' => $generation];
+        $this->pendingGenerationResult = null;
+        try {
+            $write();
+            $result = $this->pendingGenerationResult;
+        } finally {
+            // Also after an exception: the next set() is an ordinary one.
+            $this->pendingGeneration = null;
+            $this->pendingGenerationResult = null;
+        }
+        if (null === $result) {
+            throw new \LogicException('The closure given to setWithGeneration() issued no set() on this backend.', 1700100013);
+        }
+
+        return $result;
+    }
+
+    /**
+     * The set() issued inside setWithGeneration(): same arguments as the
+     * plain script, plus the generation.
+     *
+     * @param array<array-key, mixed> $tags
+     */
+    private function setCarryingGeneration(string $entryIdentifier, string $data, array $tags, int $expiration): void
+    {
+        $pending = $this->pendingGeneration;
+        // One set() per setWithGeneration(): a second one is an ordinary set.
+        $this->pendingGeneration = null;
+        if (null === $pending) {
+            return;
+        }
+        $keys = [$this->getDataIdentifier($entryIdentifier), $this->getTagsIdentifier($entryIdentifier), $pending['key']];
+        if (null !== $pending['guardKey']) {
+            $keys[] = $pending['guardKey'];
+        }
+        $this->pendingGenerationResult = $this->runGenerationScript(
+            self::SET_WITH_GENERATION_SCRIPT,
+            $keys,
+            array_merge(
+                [$expiration, $data, $entryIdentifier, $this->keyPrefix . self::TAG_IDENTIFIERS_PREFIX, $pending['generation'], self::DIRTY_PREFIX],
+                array_values($tags),
+            ),
+        );
+    }
+
+    /**
+     * @param list<string> $keys
+     * @param list<mixed>  $arguments
+     *
+     * @throws Exception when the backend is not connected or the server refused the script
+     */
+    private function runGenerationScript(string $script, array $keys, array $arguments): GenerationResult
+    {
+        if (!$this->connected) {
+            throw new Exception('KeyValueBackend is not connected; generations need the server.', 1700100014);
+        }
+        $reply = $this->redis->eval($script, array_merge($keys, $arguments), \count($keys));
+        if (!\is_array($reply) || 3 !== \count($reply)) {
+            // No fallback: a writer that cannot move the generation must not
+            // change entries, and a reader that cannot read it must not trust
+            // its memory. Both follow from the exception.
+            $error = $this->redis->getLastError();
+            throw new Exception('KeyValueBackend generation script failed' . (\is_string($error) ? ': ' . $error : '.'), 1700100015);
+        }
+
+        return new GenerationResult(
+            generation: \is_string($reply[2]) && '' !== $reply[2] ? $reply[2] : null,
+            written: 1 === (int) $reply[1],
+            guardEntryExists: 1 === (int) $reply[0],
+        );
+    }
+
+    /**
+     * @return list<string> the generation key and, when a guard entry is named, its data key
+     */
+    private function generationKeys(string $name, ?string $guardEntryIdentifier): array
+    {
+        if (1 !== preg_match('/^[a-zA-Z0-9_%\-&]{1,250}$/', $name)) {
+            throw new \InvalidArgumentException('"' . $name . '" is not a valid generation name.', 1700100016);
+        }
+        $keys = [$this->keyPrefix . self::GENERATION_PREFIX . $name];
+        if (null !== $guardEntryIdentifier) {
+            $keys[] = $this->getDataIdentifier($guardEntryIdentifier);
+        }
+
+        return $keys;
+    }
+
+    private static function assertCleanGeneration(string $generation): void
+    {
+        if ('' === $generation || str_starts_with($generation, self::DIRTY_PREFIX)) {
+            throw new \InvalidArgumentException('A published generation must be non-empty and must not be an in-flight marker.', 1700100017);
         }
     }
 

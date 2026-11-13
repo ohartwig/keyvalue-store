@@ -128,6 +128,7 @@ conditional reads are an addition next to `get` (see below).
 | `remove()` | `EXISTS` + `SMEMBERS` + pipeline (3 round trips) | One Lua `EVAL`; also clears a leftover tag index of an expired entry |
 | `collectGarbage()` | `KEYS identTags:*` | `SCAN`-loop |
 | Read of an entry the reader already holds | `GET` of the whole value | `getUnlessUnchanged()`: one Lua `EVAL` that compares length and closing bytes on the server and sends the value only if it changed |
+| Generations | — | Named raw values next to the entries; `set()` + generation write as one Lua `EVAL` (`GenerationBackendInterface`, v4.9.0) |
 | Connection | `pconnect()` only, no Sentinel/TLS | `KeyValueConnectionFactory` (Sentinel resolver, mTLS, backoff) |
 | Serializer | hard-coded PHP-native | configurable: `php` / `igbinary` / `none` / `auto` |
 
@@ -275,6 +276,67 @@ against Valkey 9.1.3 over mTLS; medians of the backend read alone:
 Below some 16 kB the round trip is the whole cost, so a reader gains nothing
 there; `koh/frankenphp` uses conditional reads from that size on.
 
+#### Generations: an entry and "something changed" in one round trip
+
+`KeyValueBackend` implements `GenerationBackendInterface` (v4.9.0). A
+generation is one opaque string per name that writers replace with a fresh
+random value whenever they change entries; a reader that keeps entries in
+memory across requests reads it once and knows whether its memory still
+holds. The backend owns the format:
+
+- stored raw under `<keyPrefix>generation:<name>` — never serialized,
+  signed or compressed, no expiry, not an entry (`get()`, `has()`,
+  `remove()` and the tag methods never see it). `flush()` removes it with
+  everything else; `flushByTag(s)()` and `collectGarbage()` leave it.
+- a value starting with `dirty-` is an in-flight marker: its writer is in
+  the middle of a change of several steps and publishes a clean value when
+  done. Only that writer replaces its marker with a clean value.
+
+| Method | Server side | Round trips |
+|---|---|---:|
+| `readGeneration($name, $guard)` | `GET` (+ `EXISTS` of the guard entry) | 1 |
+| `writeGeneration($name, $value, $guard)` | `SET`, unconditional (how a marker is placed) | 1 |
+| `publishGeneration($name, $value, $ownMarker, $guard)` | `SET` unless a marker other than `$ownMarker` is stored | 1 |
+| `setWithGeneration($name, $value, $write, $guard)` | the `set()` that `$write` issues, tag diff included, plus `SET` of the generation unless a marker is stored | 1 |
+
+`setWithGeneration()` takes a closure rather than the entry so that the
+cache frontend keeps doing its own encoding (TYPO3's `VariableFrontend`
+serializes and signs): call `$frontend->set(...)` inside it and the
+backend sends that one `set()` together with the generation write.
+
+```php
+$result = $backend->setWithGeneration(
+    'my_memo',
+    bin2hex(random_bytes(16)),
+    fn() => $frontend->set($identifier, $value, $tags, $lifetime),
+);
+// $result->written           the generation is now the value given
+// !$result->written          a writer's in-flight marker was left in place; the entry is stored
+```
+
+Why a set leaves a foreign marker: the writer that placed it is still
+changing entries and will publish afterwards. A clean value on top would
+tell readers "nothing in flight" while that change is half applied — and
+would stay if that writer's own publish then failed.
+
+The optional guard is the identifier of an ordinary entry whose existence
+means "writers that do not know this generation are active" (a release
+that kept its generation in an entry). `setWithGeneration()` stores
+nothing while it exists (`$result->guardEntryExists`); the other methods
+report it. It lets a consumer move from an entry-based generation to this
+one without a coordinated switch.
+
+All four throw when the server cannot run the script. There is no silent
+fallback: a writer that cannot move the generation must not change
+entries, and a reader that cannot read it must not trust its memory.
+
+Measured once (2026-11-13, PHP 8.5.8, phpredis 6.3, local Valkey 9.1.3
+behind a Docker port forward at about 0.35 ms per round trip; medians, an
+entry with two tags): the sequence it replaces in
+`moselwal/cluster-file-backend` — marker, `set()`, read, publish, four
+round trips — took 1,500 µs, `setWithGeneration()` 410 µs, a plain `set()`
+300–380 µs.
+
 The `flush()` and `collectGarbage()` overrides are intentionally
 slower wallclock-wise for the caller. The trade-off is server-side
 fairness: while `KEYS` runs, every other client in the Valkey
@@ -324,7 +386,9 @@ by the Redis docs:
 ```text
 Classes/
 ├── Cache/Backend/
-│   └── KeyValueBackend.php          (extends TYPO3 Core RedisBackend)
+│   ├── KeyValueBackend.php          (extends TYPO3 Core RedisBackend)
+│   ├── GenerationBackendInterface.php  (generations next to the entries)
+│   └── GenerationResult.php
 ├── Session/Backend/
 │   └── KeyValueSessionBackend.php   (implements SessionBackendInterface)
 ├── Locking/
@@ -431,6 +495,8 @@ for debuggability via `valkey-cli` — this option has no effect there.
 
 See [CHANGELOG.md](CHANGELOG.md). Notable releases:
 
+- **v4.9.0** — generations: `set()` and a generation write as one script
+  (`GenerationBackendInterface`)
 - **v4.3.0** — Lua-EVAL `set()` (1.3×–1.9× faster); `serializer` opt-in;
   KeyValueLockingStrategy audit (configurable `maxAcquireAttempts`,
   lazy connect, TTL-cache in `wait()`, log-level differentiation)
