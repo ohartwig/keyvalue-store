@@ -1,3 +1,14 @@
+## [4.9.1](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.9.0...v4.9.1) (2026-11-14)
+
+### :repeat: Continuous Integrations
+
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.116 ([8a35a98](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/8a35a98d02a87fb65155dca63c75d75b8d8d5def))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.115 ([91631e2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/91631e2ef58888b6fe702affd7507a68db426c17))
+
+### :repeat: Chores
+
+* **deps:** update dependency ergebnis/composer-normalize to ^2.57.0 ([b187d5c](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/b187d5c08abdc79eef9f852682d830ad0a6319d0))
+
 ## [4.9.0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.8.0...v4.9.0) (2026-11-13)
 
 ### :sparkles: Features
