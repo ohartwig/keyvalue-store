@@ -1,3 +1,32 @@
+## [4.9.2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.9.1...v4.9.2) (2026-11-17)
+
+### :bug: Fixes
+
+* **composer:** point homepage at the package page ([572cd8e](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/572cd8ead662ff1533d78443fdd70593ce82eeaa))
+
+### :repeat: Continuous Integrations
+
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.132 ([310d380](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/310d380e6bd58b8257ea23c084b1d9797262fb6c))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.131 ([b1f736c](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/b1f736c90d3b8aec5b8f6c20811169cdcddbb121))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.130 ([70bf0da](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/70bf0da1c1d388148beff10415c71b958b968f81))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.129 ([ba15214](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/ba1521411d71a68ec6d9cff5bb409995c08756d4))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.128 ([de5b3dc](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/de5b3dcd6a8901320e3fc681f92d673ae7d203b0))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.127 ([48c269d](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/48c269d3a70775b99abe480f6c6c1ff98422fb53))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.126 ([853572a](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/853572a0ed04879799ffd0257badb29e7bdb189f))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.125 ([26983ed](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/26983ede9a36177c948bb43344ead1ae6bfbe071))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.124 ([d264306](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/d264306389b251438a88d2073fd6acf61c9bf239))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.123 ([ff2e59b](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/ff2e59b27a0a9c772bc63d42fa40d25c37bfd2ad))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.122 ([6fcb97f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/6fcb97fccd4f1a816591f1606f768e4de86faeab))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.121 ([390a8a8](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/390a8a88d068d7fb0ff3cbe701a3ba07eed5cb55))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.120 ([c6b7b3f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/c6b7b3fc6f9a2a76dc9a3df2953b9dc81ccb7728))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.119 ([1a3ea5a](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/1a3ea5a39cf8d7ba1f6bb12816212099fb0f01c8))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.118 ([de4bd21](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/de4bd216de58616b978a46cff4c5a24a724fc842))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.117 ([de784cc](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/de784ccbb5f10f3c8c8a0eb683ee76beadc83fa6))
+
+### :repeat: Chores
+
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.246-8.5 ([d8980ec](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/d8980ecb9b6fb91729ace02681befca58c8a6c48))
+
 ## [4.9.1](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.9.0...v4.9.1) (2026-11-14)
 
 ### :repeat: Continuous Integrations
