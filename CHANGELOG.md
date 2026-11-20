@@ -1,3 +1,42 @@
+## [4.9.3](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.9.2...v4.9.3) (2026-11-20)
+
+### :fast_forward: Performance
+
+* **session:** update() in two roundtrips via compare-and-set ([d63935d](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/d63935d6cadecbd30a0c93ad6bc88f21965cfdf9))
+
+### :white_check_mark: Tests
+
+* **session:** keep the compare-and-set test parseable on PHP 8.3 ([52e3e00](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/52e3e00563e8b084492e877505b60f47442418c6))
+
+### :repeat: Continuous Integrations
+
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.158 ([4831439](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/483143908effd5875f5c5b5caa9d8ebe2fb08c64))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.157 ([40373f5](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/40373f5f1b3f1005660ce98e02ab4c274c02d08b))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.156 ([870535a](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/870535ac74320cbc5795560358797d60e94e4698))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.155 ([1ef9c8b](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/1ef9c8b4f4939d34bc2d384ed1e53ba11012cff3))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.154 ([918e59f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/918e59feb780dbd121ff94ea4fa69c11804e425d))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.153 ([5a3aa68](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/5a3aa684adbbfd311e06e4ce3f0540400213beab))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.152 ([e6c2a6e](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/e6c2a6ef058f8c4990f699d01c8f7e6c184b2f71))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.151 ([3679b26](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/3679b26718d9c0d3ddb4a5f11078f7499026b520))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.150 ([19d04d8](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/19d04d8de810d53c8ca242338ae4273d3c6dd431))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.149 ([bbd6269](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/bbd6269b7fe064ea33bab48181389fd997f3a851))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.148 ([779836e](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/779836e3ddbb8a5dc81004c52f50a108b537de8a))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.147 ([c8d7354](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/c8d73540808e2b15887eef464bc4da569b01b37a))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.146 ([ad8d4ff](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/ad8d4ff3a6d91d0e1832905a74e23d0004ce5186))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.145 ([16cdcd0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/16cdcd041f9c123dadddf1881ec5ca6fad3f5540))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.144 ([545223c](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/545223c2e90cfab880cb49ebd7683e4424407924))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.143 ([004d5bf](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/004d5bffcb634dbfa11f260ec229e99ca91995d9))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.142 ([212bed4](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/212bed415e3724cd8e93151eebbf1a1e81c94fe5))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.141 ([c5506d5](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/c5506d5a7cc0cd884d4bbbf2920a74ed650ad0c1))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.140 ([914f942](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/914f9423962c1fe6bebe793a88aef37acf2ae064))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.139 ([3cbda7c](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/3cbda7cf2758d033318a39081364ab051e4bd578))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.138 ([4ceabd0](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/4ceabd04f4a61ad32bd6f3a8659c763dc2878998))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.137 ([680faa6](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/680faa65f27aee325fa7ba0c04c5840389c68601))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.136 ([3ed972f](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/3ed972f0ea15d712358e772f54814657592bb77c))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.135 ([8664298](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/8664298ab6cd991c5ca585b8ca43d66d758d6a56))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.134 ([5f8acc2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/5f8acc2fc76c1fe85aff0b814ab34b6aefaca04c))
+* **deps:** update registry.ole-hartwig.eu/devops/images/valkey docker tag to v2.4.133 ([21c33fe](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/commit/21c33fee55d080f25068afd07cf10841b0bf1140))
+
 ## [4.9.2](https://git.ole-hartwig.eu/development/moselwal/keyvalue-store/compare/v4.9.1...v4.9.2) (2026-11-17)
 
 ### :bug: Fixes
