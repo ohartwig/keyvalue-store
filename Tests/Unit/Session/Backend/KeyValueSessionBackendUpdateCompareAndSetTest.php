@@ -116,13 +116,13 @@ final class KeyValueSessionBackendUpdateCompareAndSetTest extends TestCase
             'hashSessionIds' => false,
         ]);
 
-        new \ReflectionProperty($backend, 'redis')->setValue($backend, $redis);
+        (new \ReflectionProperty($backend, 'redis'))->setValue($backend, $redis);
 
         return $backend;
     }
 
     private function compareAndSetScript(): string
     {
-        return (string) new \ReflectionClassConstant(KeyValueSessionBackend::class, 'COMPARE_AND_SET_SCRIPT')->getValue();
+        return (string) (new \ReflectionClassConstant(KeyValueSessionBackend::class, 'COMPARE_AND_SET_SCRIPT'))->getValue();
     }
 }
