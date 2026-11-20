@@ -106,16 +106,30 @@ final class KeyValueSessionBackend implements SessionBackendInterface, HashableS
         LUA;
 
     /**
-     * Rewrite a record written before v4.7, whose `ses_id` still held the
-     * plain session ID, with the hashed one. Compare-and-set against the
-     * value that was read so a concurrent update() is never overwritten
-     * with older data; the remaining TTL is kept.
+     * Compare-and-set that keeps the remaining TTL: write ARGV[2] only while
+     * the key still holds ARGV[1], the value the caller read.
+     *
+     * update() and the pre-v4.7 record migration both go through it, so
+     * neither can overwrite a concurrent write with older data. The script
+     * takes the place of WATCH/MULTI/EXEC: one roundtrip after the GET
+     * instead of five, and no WATCH left behind on a connection that is
+     * kept for the next request. It runs unchanged on Redis and Valkey.
+     *
+     * - KEYS[1] = session key
+     * - ARGV[1] = value read by the caller
+     * - ARGV[2] = value to write
+     * - ARGV[3] = TTL in seconds for a key that has none (optional; without
+     *             it such a key stays without a TTL)
+     *
+     * Returns 1 when written, 0 when the key changed or is gone.
      */
-    private const MIGRATE_SCRIPT = <<<'LUA'
+    private const COMPARE_AND_SET_SCRIPT = <<<'LUA'
         if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
         local ttl = redis.call('PTTL', KEYS[1])
         if ttl > 0 then
             redis.call('SET', KEYS[1], ARGV[2], 'PX', ttl)
+        elseif ARGV[3] then
+            redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3])
         else
             redis.call('SET', KEYS[1], ARGV[2])
         end
@@ -338,6 +352,10 @@ final class KeyValueSessionBackend implements SessionBackendInterface, HashableS
      *
      * Preserves the existing TTL. Enforces ses_id = hash($sessionId) and updates ses_tstamp.
      *
+     * Two roundtrips: GET, then a compare-and-set against the value that
+     * was read. A concurrent write in between makes the compare fail and
+     * the merge is redone on the newer record, once.
+     *
      * @param array<array-key, mixed> $sessionData
      *
      * @return array<array-key, mixed>
@@ -347,17 +365,15 @@ final class KeyValueSessionBackend implements SessionBackendInterface, HashableS
     public function update(string $sessionId, array $sessionData): array
     {
         $maxRetries = 2;
+        $fallbackTtl = max(1, (int) ($this->options['sessionLifetime'] ?? self::DEFAULT_SESSION_LIFETIME));
 
         for ($attempt = 0; $attempt < $maxRetries; ++$attempt) {
             try {
                 $redis = $this->getRedis();
                 $key = $this->key($sessionId);
 
-                $redis->watch($key);
-
                 $raw = $redis->get($key);
                 if (false === $raw) {
-                    $redis->unwatch();
                     throw new SessionNotUpdatedException('Session not found, cannot update', 1730001030);
                 }
 
@@ -372,21 +388,18 @@ final class KeyValueSessionBackend implements SessionBackendInterface, HashableS
                 $record['ses_id'] = $this->hash($sessionId);
                 $record['ses_tstamp'] = $GLOBALS['EXEC_TIME'] ?? time();
 
-                // Preserve the existing TTL; fall back to configured lifetime when the
-                // key has no TTL (-1) or has already expired (-2).
-                $ttl = (int) $redis->ttl($key);
-                if ($ttl <= 0) {
-                    $ttl = (int) ($this->options['sessionLifetime'] ?? self::DEFAULT_SESSION_LIFETIME);
-                }
-
                 $encoded = json_encode($record, JSON_THROW_ON_ERROR);
 
-                $redis->multi();
-                $redis->setex($key, max(1, $ttl), $encoded);
-                $result = $redis->exec();
+                // The remaining TTL is kept server-side; the configured
+                // lifetime only applies to a key that has none.
+                $written = $redis->eval(
+                    self::COMPARE_AND_SET_SCRIPT,
+                    [$key, (string) $raw, $encoded, (string) $fallbackTtl],
+                    1,
+                );
 
-                if (false === $result) {
-                    // WATCH detected a concurrent modification; retry
+                if (1 !== (int) $written) {
+                    // The record changed or expired since the GET; retry.
                     continue;
                 }
 
@@ -506,7 +519,7 @@ final class KeyValueSessionBackend implements SessionBackendInterface, HashableS
     {
         try {
             $this->getRedis()->eval(
-                self::MIGRATE_SCRIPT,
+                self::COMPARE_AND_SET_SCRIPT,
                 [$key, $raw, json_encode($record, JSON_THROW_ON_ERROR)],
                 1,
             );

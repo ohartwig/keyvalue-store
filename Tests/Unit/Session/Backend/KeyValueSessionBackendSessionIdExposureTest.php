@@ -168,7 +168,7 @@ final class KeyValueSessionBackendSessionIdExposureTest extends TestCase
         yield 'update, lost the race twice' => [static fn(KeyValueSessionBackend $b) => $b->update(self::SESSION_ID, []), static function (): \Redis {
             $redis = new InMemoryRedis();
             $redis->data[self::PREFIX . hash_hmac('sha256', self::SESSION_ID, self::SECRET)] = '{}';
-            $redis->abortTransactions = true;
+            $redis->loseCompareAndSet = true;
 
             return $redis;
         }];

@@ -15,12 +15,11 @@ final class InMemoryRedis extends \Redis
     public array $data = [];
     public ?\RedisException $failWith = null;
     public bool $refuseWrites = false;
-    public bool $abortTransactions = false;
+    /** Every compare-and-set finds the key changed, as if another request always wrote first. */
+    public bool $loseCompareAndSet = false;
 
-    /** @var list<array{string, int, string}> */
-    private array $queued = [];
-
-    private bool $inMulti = false;
+    /** @var list<array{string, list<mixed>, int}> */
+    public array $evalCalls = [];
 
     public function __construct()
     {
@@ -46,11 +45,6 @@ final class InMemoryRedis extends \Redis
         $this->fail();
         if ($this->refuseWrites) {
             return false;
-        }
-        if ($this->inMulti) {
-            $this->queued[] = [$key, $expire, (string) $value];
-
-            return $this;
         }
         $this->data[$key] = (string) $value;
 
@@ -87,54 +81,15 @@ final class InMemoryRedis extends \Redis
         return array_map(fn(string $k): string|false => $this->data[$k] ?? false, $keys);
     }
 
-    public function watch(array|string $key, string ...$other_keys): \Redis|bool
-    {
-        $this->fail();
-
-        return true;
-    }
-
-    public function unwatch(): \Redis|bool
-    {
-        return true;
-    }
-
-    public function multi(int $value = \Redis::MULTI): \Redis|bool
-    {
-        $this->fail();
-        $this->inMulti = true;
-
-        return $this;
-    }
-
-    public function exec(): \Redis|array|false
-    {
-        $this->fail();
-        $this->inMulti = false;
-        $queued = $this->queued;
-        $this->queued = [];
-        if ($this->abortTransactions) {
-            return false;
-        }
-        foreach ($queued as [$key, , $value]) {
-            $this->data[$key] = $value;
-        }
-
-        return array_fill(0, count($queued), true);
-    }
-
-    public function ttl(string $key): \Redis|int|false
-    {
-        $this->fail();
-
-        return isset($this->data[$key]) ? 3600 : -2;
-    }
-
-    /** Compare-and-set, the only script the session backend runs with one key and two args. */
+    /** Compare-and-set, the only script the session backend runs with one key. */
     public function eval(string $script, array $args = [], int $num_keys = 0): mixed
     {
         $this->fail();
+        $this->evalCalls[] = [$script, array_values($args), $num_keys];
         [$key, $expected, $new] = $args + [null, null, null];
+        if ($this->loseCompareAndSet) {
+            return 0;
+        }
         if (1 === $num_keys && is_string($key) && ($this->data[$key] ?? null) === $expected) {
             $this->data[$key] = (string) $new;
 

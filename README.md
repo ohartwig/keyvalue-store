@@ -353,8 +353,9 @@ scheduler tick).
 
 - **JSON serialisation** for session payloads (not PHP-native) so
   records remain debuggable with `valkey-cli`
-- **WATCH / MULTI / EXEC** on `update()` with bounded retries —
-  optimistic concurrency, two-tab login is safe
+- **GET + compare-and-set (Lua `EVAL`)** on `update()` with bounded
+  retries — optimistic concurrency in two roundtrips instead of the
+  six of WATCH / GET / TTL / MULTI / SETEX / EXEC; two-tab login is safe
 - **Lua EVAL for `renew()`** — atomic GET/SETEX/DEL so concurrent
   updates cannot be lost during the rename
 - **`getAll()` via SCAN + MGET** instead of SCAN + N× GET — 24.6×

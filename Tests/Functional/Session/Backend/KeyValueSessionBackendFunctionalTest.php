@@ -148,6 +148,45 @@ final class KeyValueSessionBackendFunctionalTest extends TestCase
         $this->sessionBackend->update('nonexistent-session', ['ses_data' => 'value']);
     }
 
+    public function testUpdateKeepsTheRemainingTtl(): void
+    {
+        $this->sessionBackend->set('session-ttl', ['ses_data' => 'old']);
+        $key = $this->prefix . $this->sessionBackend->hash('session-ttl');
+        $this->redis->expire($key, 120);
+
+        $this->sessionBackend->update('session-ttl', ['ses_data' => 'new']);
+
+        $ttl = $this->redis->ttl($key);
+        self::assertGreaterThan(100, $ttl);
+        self::assertLessThanOrEqual(120, $ttl);
+    }
+
+    public function testUpdateGivesAKeyWithoutTtlTheConfiguredLifetime(): void
+    {
+        $this->sessionBackend->set('session-nottl', ['ses_data' => 'old']);
+        $key = $this->prefix . $this->sessionBackend->hash('session-nottl');
+        $this->redis->persist($key);
+
+        $this->sessionBackend->update('session-nottl', ['ses_data' => 'new']);
+
+        $ttl = $this->redis->ttl($key);
+        self::assertGreaterThan(3500, $ttl);
+        self::assertLessThanOrEqual(3600, $ttl);
+    }
+
+    public function testUpdateLeavesNoWatchOnTheConnection(): void
+    {
+        $this->sessionBackend->set('session-nowatch', ['ses_data' => 'old']);
+        $before = $this->redis->info('clients')['watching_clients'] ?? null;
+        if (null === $before) {
+            self::markTestSkipped('Server does not report watching_clients');
+        }
+
+        $this->sessionBackend->update('session-nowatch', ['ses_data' => 'new']);
+
+        self::assertSame($before, $this->redis->info('clients')['watching_clients']);
+    }
+
     public function testRemoveDeletesSession(): void
     {
         $this->sessionBackend->set('session-del', ['ses_data' => 'bye']);
